@@ -6,6 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Shape;
+import com.networkgame.model.entity.Connection;
 
 /**
  * Handles visual representation of network connections

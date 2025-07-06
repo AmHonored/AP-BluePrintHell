@@ -1,0 +1,606 @@
+/* Modern Network Game UI Style - Main CSS File */
+
+/* Global Styles */
+.root {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: white;
+}
+
+/* Button Styles */
+.button {
+    -fx-background-color: #0f3460;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5;
+    -fx-padding: 10 20;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 1);
+    -fx-transition: -fx-background-color 0.3s;
+}
+
+.button:hover {
+    -fx-background-color: #16213e;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-transition: -fx-scale-x 0.15s, -fx-scale-y 0.15s;
+}
+
+.button:pressed {
+    -fx-background-color: #e94560;
+}
+
+/* Menu Button Styles */
+.menu-button {
+    -fx-pref-width: 220;
+    -fx-background-color: #0f3460;
+    -fx-text-fill: white;
+    -fx-font-size: 16;
+    -fx-padding: 12 24;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #e94560;
+    -fx-border-width: 0 0 2 0;
+}
+
+.menu-button:hover {
+    -fx-background-color: #16213e;
+    -fx-translate-y: -2;
+}
+
+/* Main Menu Styles */
+.main-menu {
+    -fx-background-color: linear-gradient(to bottom, #1a1a2e, #16213e);
+}
+
+.title-label {
+    -fx-font-size: 48;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e94560;
+    -fx-effect: dropshadow(gaussian, rgba(233, 69, 96, 0.4), 10, 0, 0, 0);
+}
+
+/* Game UI Styles */
+.game-pane {
+    -fx-background-color: #16213e;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #0f3460;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);
+}
+
+.hud-pane {
+    -fx-background-color: rgba(15, 52, 96, 0.8);
+    -fx-background-radius: 10 10 0 0;
+    -fx-border-radius: 10 10 0 0;
+    -fx-border-color: #e94560;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 10;
+}
+
+/* HUD container with toggle button */
+.hud-container {
+    -fx-background-color: rgba(15, 52, 96, 0.8);
+    -fx-background-radius: 10 10 0 0;
+    -fx-border-radius: 10 10 0 0;
+    -fx-border-color: #e94560;
+    -fx-border-width: 0 0 2 0;
+}
+
+.controls-pane {
+    -fx-background-color: rgba(15, 52, 96, 0.8);
+    -fx-background-radius: 0 0 10 10;
+    -fx-border-radius: 0 0 10 10;
+    -fx-border-color: #e94560;
+    -fx-border-width: 2 0 0 0;
+    -fx-padding: 10;
+}
+
+.stats-box {
+    -fx-background-color: rgba(22, 33, 62, 0.7);
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+    -fx-spacing: 5;
+    -fx-alignment: center;
+    -fx-min-width: 110; /* Ensure minimum width for boxes to prevent text truncation */
+}
+
+.stats-title {
+    -fx-font-size: 13;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e94560;
+    -fx-wrap-text: false; /* Prevent text wrapping */
+    -fx-alignment: center;
+}
+
+.stats-value {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+/* Progress Bar */
+.progress-bar {
+    -fx-accent: #e94560;
+    -fx-background-color: rgba(255,255,255,0.1);
+    -fx-background-radius: 10;
+}
+
+.progress-bar > .track {
+    -fx-background-color: rgba(255,255,255,0.1);
+    -fx-background-radius: 10;
+}
+
+.progress-bar > .bar {
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(233, 69, 96, 0.6), 5, 0, 0, 0);
+}
+
+/* Number input field */
+.time-input-field {
+    -fx-background-color: rgba(22, 33, 62, 0.8);
+    -fx-text-fill: #00aaff;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-border-color: #42a3ff;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 4 8;
+    -fx-pref-width: 60;
+    -fx-max-width: 60;
+    -fx-alignment: center;
+}
+
+.time-input-field:focused {
+    -fx-border-color: #e94560;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(233, 69, 96, 0.4), 5, 0, 0, 0);
+}
+
+/* Port Styles */
+.port {
+    -fx-fill: #0f3460;
+    -fx-stroke: #e94560;
+    -fx-stroke-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(233, 69, 96, 0.6), 5, 0, 0, 0);
+}
+
+.port:hover {
+    -fx-fill: #e94560;
+    -fx-cursor: hand;
+}
+
+.highlighted-port {
+    -fx-fill: #e94560;
+    -fx-stroke: white;
+    -fx-stroke-width: 3;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.8), 10, 0, 0, 0);
+}
+
+/* Packets */
+.packet {
+    -fx-stroke-width: 3.0;
+    -fx-stroke-type: outside;
+    -fx-opacity: 1.0;
+}
+
+.square-packet {
+    -fx-arc-width: 0;
+    -fx-arc-height: 0;
+    -fx-fill: #00ff00;
+    -fx-stroke: #008800;
+}
+
+.triangle-packet {
+    -fx-fill: #ffff00;
+    -fx-stroke: #ff8800;
+}
+
+.packet-active {
+    -fx-stroke-width: 3.5;
+    -fx-opacity: 1.0;
+}
+
+.packet-noise {
+    -fx-fill: linear-gradient(to bottom right, #FF4500, #8B0000);
+    -fx-stroke: #FF7F50;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,0,0,0.8), 10, 0, 0, 0);
+}
+
+/* New styles for packet displacement - more subtle */
+.packet-displaced {
+    -fx-stroke-width: 2.5;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,165,0,0.4), 5, 0, 0, 0);
+}
+
+.packet-critical {
+    -fx-stroke: #ff5500;
+    -fx-stroke-width: 3;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,0,0,0.5), 7, 0, 0, 0);
+}
+
+/* Connection Styles */
+.connection {
+    -fx-stroke: #e94560;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+}
+
+/* Overlay Styles */
+.overlay {
+    -fx-background-color: rgba(22, 33, 62, 0.9);
+    -fx-background-radius: 15;
+    -fx-padding: 20;
+    -fx-spacing: 15;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 15, 0, 0, 0);
+    -fx-border-color: #e94560;
+    -fx-border-width: 2;
+    -fx-border-radius: 15;
+}
+
+/* Volume Slider Styles */
+.slider {
+    -fx-pref-height: 30;
+    -fx-show-tick-marks: false;
+    -fx-show-tick-labels: false;
+}
+
+.slider .track {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+    -fx-background-radius: 10;
+    -fx-pref-height: 6;
+}
+
+.slider .thumb {
+    -fx-background-color: white;
+    -fx-background-radius: 50%;
+    -fx-pref-width: 16;
+    -fx-pref-height: 16;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.4), 5, 0, 0, 0);
+}
+
+.slider .colored-track {
+    -fx-background-color: linear-gradient(to right, #42a3ff, #e94560);
+    -fx-background-radius: 5;
+}
+
+.slider .axis {
+    -fx-tick-label-fill: white;
+    -fx-tick-label-font-size: 10px;
+}
+
+.volume-value-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.settings-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.overlay-title {
+    -fx-font-size: 32;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e94560;
+    -fx-effect: dropshadow(gaussian, rgba(233, 69, 96, 0.4), 5, 0, 0, 0);
+}
+
+.overlay-text {
+    -fx-font-size: 18;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+/* Shop Item Styles */
+.shop-item {
+    -fx-background-color: rgba(15, 52, 96, 0.7);
+    -fx-background-radius: 10;
+    -fx-padding: 15;
+    -fx-spacing: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 0);
+    -fx-border-color: rgba(233, 69, 96, 0.3);
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+}
+
+.shop-item:hover {
+    -fx-background-color: rgba(22, 33, 62, 0.8);
+    -fx-border-color: #e94560;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(233, 69, 96, 0.4), 10, 0, 0, 0);
+}
+
+.shop-item-title {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.shop-item-desc {
+    -fx-font-size: 12;
+    -fx-text-fill: lightgray;
+}
+
+.coin-label {
+    -fx-text-fill: gold;
+    -fx-font-weight: bold;
+}
+
+/* Shop ScrollPane Styles */
+.shop-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: rgba(233, 69, 96, 0.3);
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.shop-scroll-pane .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.shop-scroll-pane .corner {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.shop-scroll-pane .scroll-bar {
+    -fx-background-color: rgba(15, 52, 96, 0.5);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+
+.shop-scroll-pane .scroll-bar .track {
+    -fx-background-color: rgba(22, 33, 62, 0.7);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+
+.shop-scroll-pane .scroll-bar .thumb {
+    -fx-background-color: #e94560;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-effect: dropshadow(three-pass-box, rgba(233, 69, 96, 0.4), 5, 0, 0, 0);
+}
+
+.shop-scroll-pane .scroll-bar .thumb:hover {
+    -fx-background-color: #ff5577;
+    -fx-effect: dropshadow(three-pass-box, rgba(255, 85, 119, 0.6), 8, 0, 0, 0);
+}
+
+.shop-scroll-pane .scroll-bar .increment-arrow,
+.shop-scroll-pane .scroll-bar .decrement-arrow {
+    -fx-background-color: rgba(22, 33, 62, 0.8);
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+}
+
+.shop-scroll-pane .scroll-bar .increment-button,
+.shop-scroll-pane .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+}
+
+.shop-scroll-pane .scroll-bar .increment-button:hover,
+.shop-scroll-pane .scroll-bar .decrement-button:hover {
+    -fx-background-color: rgba(233, 69, 96, 0.3);
+}
+
+/* System Styles */
+.network-system {
+    -fx-arc-width: 0;
+    -fx-arc-height: 0;
+    -fx-stroke-width: 2;
+}
+
+.system-active {
+    -fx-effect: dropshadow(gaussian, rgba(0,255,127,0.7), 10, 0, 0, 0);
+}
+
+.system-reference {
+    -fx-fill: #333333;
+    -fx-stroke: #000000;
+}
+
+.system-normal {
+    -fx-fill: #333333;
+    -fx-stroke: #000000;
+}
+
+.system-start {
+    -fx-fill: #244031;
+    -fx-stroke: #42a353;
+    -fx-stroke-width: 3;
+    -fx-effect: dropshadow(gaussian, rgba(66,163,83,0.7), 10, 0, 0, 0);
+}
+
+.system-end {
+    -fx-fill: #332724;
+    -fx-stroke: #a34242;
+    -fx-stroke-width: 3;
+    -fx-effect: dropshadow(gaussian, rgba(163,66,66,0.7), 10, 0, 0, 0);
+}
+
+.system-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-background-color: rgba(0,0,0,0.6);
+    -fx-background-radius: 3;
+    -fx-padding: 2 5 2 5;
+}
+
+/* Wire label specific styling - for better visibility */
+.wire-label {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-transition: -fx-text-fill 0.3s, -fx-scale-x 0.3s, -fx-scale-y 0.3s;
+}
+
+.wire-label.updating {
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+}
+
+/* Out of wire warning */
+.out-of-wire {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e94560;
+    -fx-background-color: rgba(22, 33, 62, 0.7);
+    -fx-background-radius: 4;
+    -fx-padding: 2 5 2 5;
+}
+
+/* Indicator Lamp Styles */
+.indicator-lamp {
+    -fx-stroke-width: 1;
+    -fx-stroke: #777777;
+}
+
+.indicator-lamp-off {
+    -fx-fill: #000000;
+}
+
+.indicator-lamp-on {
+    -fx-fill: #0077FF;
+    -fx-effect: dropshadow(gaussian, rgba(0,119,255,0.7), 10, 0, 0, 0);
+}
+
+/* HUD Control Panel Styles */
+.hud-control-panel {
+    -fx-background-color: rgba(30, 30, 50, 0.85);
+    -fx-background-radius: 10;
+    -fx-border-color: #42a3ff;
+    -fx-border-width: 2;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 0, 0);
+}
+
+.hud-button {
+    -fx-background-color: #1e1e32;
+    -fx-text-fill: #42a3ff;
+    -fx-font-weight: bold;
+    -fx-border-color: #42a3ff;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-padding: 3 6;
+}
+
+.hud-button:hover {
+    -fx-background-color: #42a3ff;
+    -fx-text-fill: white;
+}
+
+/* Wire Collision and Bend Point Styles */
+.wire-collision {
+    -fx-stroke: #0066ff;
+    -fx-stroke-width: 4;
+    -fx-effect: dropshadow(gaussian, rgba(0,102,255,0.5), 5, 0, 0, 0);
+}
+
+.wire-modified {
+    -fx-stroke: #ffcc00;
+    -fx-stroke-width: 4;
+    -fx-effect: dropshadow(gaussian, rgba(255,204,0,0.5), 5, 0, 0, 0);
+}
+
+.bend-button {
+    -fx-background-color: #ffcc00;
+    -fx-text-fill: #000000;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 6;
+    -fx-background-radius: 3;
+    -fx-border-color: #000000;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-cursor: hand;
+}
+
+.bend-button:hover {
+    -fx-background-color: #ffd700;
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+}
+
+.bend-point {
+    -fx-fill: #ffcc00;
+    -fx-stroke: #000000;
+    -fx-stroke-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 0, 0);
+    -fx-cursor: hand;
+}
+
+.bend-point-hover {
+    -fx-fill: #ffd700;
+    -fx-stroke: #000000;
+    -fx-stroke-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.6), 5, 0, 0, 0);
+}
+
+.bend-point-selected {
+    -fx-fill: #ff8c00;
+    -fx-stroke: #ff4500;
+    -fx-stroke-width: 3;
+    -fx-effect: dropshadow(gaussian, rgba(255,140,0,0.8), 6, 0, 0, 0);
+}
+
+/* HUD Toggle Button Styles */
+.hud-toggle-button {
+    -fx-background-color: rgba(15, 52, 96, 0.9);
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 8;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #42a3ff;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 2, 0, 0, 1);
+    -fx-pref-width: 80;
+    -fx-max-width: 80;
+    -fx-min-width: 80;
+}
+
+.hud-toggle-button:hover {
+    -fx-background-color: rgba(22, 33, 62, 0.9);
+    -fx-border-color: #5bb3ff;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.hud-toggle-button:pressed {
+    -fx-background-color: rgba(66, 163, 255, 0.8);
+    -fx-text-fill: white;
+}
+
+/* HUD Toggle Button when HUD is hidden */
+.hud-toggle-button.hud-hidden {
+    -fx-background-color: rgba(233, 69, 96, 0.9);
+    -fx-border-color: #ff6b80;
+    -fx-text-fill: white;
+}
+
+.hud-toggle-button.hud-hidden:hover {
+    -fx-background-color: rgba(255, 85, 119, 0.9);
+    -fx-border-color: #ff8fa0;
+}
+
+.settings-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #42a3ff;
+    -fx-padding: 0 0 10 0;
+} 

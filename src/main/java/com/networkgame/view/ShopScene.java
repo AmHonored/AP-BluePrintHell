@@ -1,9 +1,9 @@
 package com.networkgame.view;
 
 import com.networkgame.controller.GameController;
-import com.networkgame.model.AudioManager;
-import com.networkgame.model.AudioManager.SoundType;
-import com.networkgame.model.GameState;
+import com.networkgame.service.audio.AudioManager;
+import com.networkgame.service.audio.AudioManager.SoundType;
+import com.networkgame.model.state.GameState;
 import javafx.animation.SequentialTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.FadeTransition;
@@ -12,6 +12,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -46,8 +47,8 @@ public class ShopScene {
         Label coinsLabel = new Label("Your Coins: " + gameState.getCoins());
         coinsLabel.getStyleClass().addAll("stats-value", "coin-label");
         
-        // Create shop items
-        VBox shopItems = createShopItems();
+        // Create shop items with scroll pane
+        ScrollPane shopScrollPane = createShopScrollPane();
         
         // Create back button
         Button backButton = new Button("Back to Game");
@@ -58,7 +59,7 @@ public class ShopScene {
         });
         
         // Add all components to the layout
-        mainLayout.getChildren().addAll(titleLabel, coinsLabel, shopItems, backButton);
+        mainLayout.getChildren().addAll(titleLabel, coinsLabel, shopScrollPane, backButton);
         
         // Create scene and apply CSS
         scene = new Scene(mainLayout, 800, 600);
@@ -72,11 +73,12 @@ public class ShopScene {
         });
     }
     
-    private VBox createShopItems() {
+    private ScrollPane createShopScrollPane() {
         VBox itemsBox = new VBox(15);
         itemsBox.setAlignment(Pos.CENTER);
+        itemsBox.setPadding(new Insets(10));
         
-        // O' Atar item
+        // Existing items
         HBox atarItem = createShopItem(
             "O' Atar", 
             "Disable Impact wave effects for 10 seconds", 
@@ -91,7 +93,6 @@ public class ShopScene {
             }
         );
         
-        // O' Airyaman item
         HBox airyamanItem = createShopItem(
             "O' Airyaman", 
             "Disable packet collisions for 5 seconds", 
@@ -106,7 +107,6 @@ public class ShopScene {
             }
         );
         
-        // O' Anahita item
         HBox anahitaItem = createShopItem(
             "O' Anahita", 
             "Reset noise for all packets in the network", 
@@ -121,9 +121,65 @@ public class ShopScene {
             }
         );
         
-        itemsBox.getChildren().addAll(atarItem, airyamanItem, anahitaItem);
+        // New scroll items
+        HBox aergiaItem = createShopItem(
+            "Scroll of Aergia", 
+            "Select a point on network connections to set packet acceleration to zero for 20 seconds", 
+            10,
+            () -> {
+                if (gameState.getCoins() >= 10) {
+                    // Placeholder for future implementation
+                    gameState.spendCoins(10);
+                    audioManager.playSoundEffect(SoundType.SHOP_PURCHASE);
+                    return true;
+                }
+                return false;
+            }
+        );
         
-        return itemsBox;
+        HBox sisyphusItem = createShopItem(
+            "Scroll of Sisyphus", 
+            "Move non-reference systems within a specific radius with wire length constraints", 
+            15,
+            () -> {
+                if (gameState.getCoins() >= 15) {
+                    // Placeholder for future implementation
+                    gameState.spendCoins(15);
+                    audioManager.playSoundEffect(SoundType.SHOP_PURCHASE);
+                    return true;
+                }
+                return false;
+            }
+        );
+        
+        HBox eliphasItem = createShopItem(
+            "Scroll of Eliphas", 
+            "Reset packet center of gravity affected by collisions and impacts for 30 seconds", 
+            20,
+            () -> {
+                if (gameState.getCoins() >= 20) {
+                    // Placeholder for future implementation
+                    gameState.spendCoins(20);
+                    audioManager.playSoundEffect(SoundType.SHOP_PURCHASE);
+                    return true;
+                }
+                return false;
+            }
+        );
+        
+        itemsBox.getChildren().addAll(atarItem, airyamanItem, anahitaItem, aergiaItem, sisyphusItem, eliphasItem);
+        
+        // Create ScrollPane
+        ScrollPane scrollPane = new ScrollPane(itemsBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setPrefHeight(300);
+        scrollPane.setMaxHeight(300);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("shop-scroll-pane");
+        
+        return scrollPane;
     }
     
     private HBox createShopItem(String name, String description, int cost, java.util.function.Supplier<Boolean> action) {
@@ -208,7 +264,18 @@ public class ShopScene {
     }
     
     private void updateShopItemButtons() {
-        VBox shopItemsContainer = (VBox) ((VBox) scene.getRoot()).getChildren().get(2);
+        // Find the scroll pane and get the items container
+        ScrollPane shopScrollPane = null;
+        for (javafx.scene.Node node : ((VBox) scene.getRoot()).getChildren()) {
+            if (node instanceof ScrollPane) {
+                shopScrollPane = (ScrollPane) node;
+                break;
+            }
+        }
+        
+        if (shopScrollPane == null) return;
+        
+        VBox shopItemsContainer = (VBox) shopScrollPane.getContent();
         
         for (javafx.scene.Node node : shopItemsContainer.getChildren()) {
             if (!(node instanceof HBox)) continue;

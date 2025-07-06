@@ -1,6 +1,10 @@
 package com.networkgame.controller;
 
 import com.networkgame.model.*;
+import com.networkgame.model.entity.Port;
+import com.networkgame.model.manager.LevelManager;
+import com.networkgame.model.state.GameState;
+import com.networkgame.service.audio.AudioManager;
 import com.networkgame.view.GameScene;
 import com.networkgame.view.LevelSelectScene;
 import com.networkgame.view.MainMenuScene;
@@ -83,6 +87,9 @@ public class GameController {
         levelSelectScene = new LevelSelectScene(this, levelManager);
         settingsScene = new SettingsScene(this, audioManager);
         
+        // Start playing menu music when the application starts
+        audioManager.playMenuMusic();
+        
         return mainMenuScene.getScene();
     }
     
@@ -119,6 +126,17 @@ public class GameController {
     // Game state queries
     public boolean isRunning() { return gameplayController.isRunning(); }
     public boolean isTemporalControlMode() { return temporalController.isTemporalControlMode(); }
+    
+    // HUD control
+    public void toggleHudVisibility() { 
+        if (gameState.getHudManager() != null) {
+            gameState.getHudManager().toggleHudVisibility();
+        }
+    }
+    
+    public boolean isHudVisible() { 
+        return gameState.getHudManager() != null && gameState.getHudManager().isHudVisible();
+    }
     
     // Audio control
     public void setVolume(double volume) { audioManager.setVolume(volume); }

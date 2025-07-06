@@ -1,9 +1,9 @@
 package com.networkgame.view;
 
 import com.networkgame.controller.GameController;
-import com.networkgame.model.AudioManager;
-import com.networkgame.model.AudioManager.SoundType;
-import com.networkgame.model.LevelManager;
+import com.networkgame.service.audio.AudioManager;
+import com.networkgame.service.audio.AudioManager.SoundType;
+import com.networkgame.model.manager.LevelManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
