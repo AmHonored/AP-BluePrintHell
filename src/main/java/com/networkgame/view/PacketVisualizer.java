@@ -1,25 +1,36 @@
 package com.networkgame.view;
 
-import com.networkgame.model.*;
-import javafx.animation.FadeTransition;
+import javafx.application.Platform;
+import javafx.scene.Group;
+import javafx.scene.layout.Pane;
+import javafx.scene.shape.Shape;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Circle;
+import javafx.scene.paint.Color;
+import javafx.scene.effect.Glow;
+import javafx.geometry.Point2D;
+import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
-import javafx.geometry.Point2D;
-import javafx.scene.effect.Glow;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Polygon;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
+import javafx.animation.TranslateTransition;
+import javafx.animation.FadeTransition;
 import javafx.util.Duration;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import com.networkgame.model.entity.Packet;
+import com.networkgame.model.entity.Connection;
+import com.networkgame.model.entity.system.NetworkSystem;
+import com.networkgame.model.state.GameState;
+import com.networkgame.service.audio.AudioManager;
 
 /**
  * Handles packet visualization and animations
@@ -49,14 +60,62 @@ public class PacketVisualizer {
      * Add and position packet shapes in the game pane
      */
     public void updatePackets() {
-        removeOldPacketShapes();
+        // Skip removal during level transitions to prevent visual artifacts
+        if (gameState != null && gameState.getActivePackets() != null && !gameState.getActivePackets().isEmpty()) {
+            removeOldPacketShapes();
+        }
         arrangeZOrder();
         addActivePackets();
     }
     
     private void removeOldPacketShapes() {
-        gamePane.getChildren().removeIf(node -> node instanceof Shape && 
-            node.getStyleClass().contains("packet"));
+        if (gameState == null || gameState.getActivePackets() == null) {
+            return;
+        }
+        
+        // Get all currently active packet shapes
+        Set<Shape> activeShapes = new HashSet<>();
+        for (Packet packet : gameState.getActivePackets()) {
+            if (packet != null && packet.getShape() != null) {
+                activeShapes.add(packet.getShape());
+            }
+        }
+        
+        // Count current packet shapes
+        long packetShapesBefore = gamePane.getChildren().stream()
+            .filter(node -> node instanceof Shape && node.getStyleClass().contains("packet"))
+            .count();
+        
+        // CRITICAL SAFEGUARD: If we have active packets but no active shapes, 
+        // or if active packets list is empty but we have shapes, don't remove anything
+        // This prevents removal during level transitions
+        if ((gameState.getActivePackets().size() > 0 && activeShapes.isEmpty()) ||
+            (gameState.getActivePackets().isEmpty() && packetShapesBefore > 0)) {
+            System.out.println("PacketVisualizer: Skipping shape removal during level transition. " +
+                              "Active packets: " + gameState.getActivePackets().size() + 
+                              ", Active shapes: " + activeShapes.size() + 
+                              ", Total shapes: " + packetShapesBefore);
+            return;
+        }
+        
+        // Only remove packet shapes that are no longer associated with active packets
+        gamePane.getChildren().removeIf(node -> 
+            node instanceof Shape && 
+            node.getStyleClass().contains("packet") && 
+            !activeShapes.contains(node)
+        );
+        
+        // Count shapes after removal for debugging
+        long packetShapesAfter = gamePane.getChildren().stream()
+            .filter(node -> node instanceof Shape && node.getStyleClass().contains("packet"))
+            .count();
+        
+        // Log only if shapes were removed (avoid spam)
+        if (packetShapesBefore > packetShapesAfter) {
+            System.out.println("PacketVisualizer: Removed " + (packetShapesBefore - packetShapesAfter) + 
+                              " old packet shapes. Active packets: " + gameState.getActivePackets().size() + 
+                              ", Remaining shapes: " + packetShapesAfter);
+        }
     }
     
     private void arrangeZOrder() {
@@ -70,7 +129,7 @@ public class PacketVisualizer {
             system.getShape().toBack();
             
             // Ensure inner boxes are in front of system shapes but behind packets
-            if (!system.isStartSystem() && !system.isEndSystem()) {
+            if (system.shouldShowInnerBox()) {
                 Rectangle innerBox = system.getInnerBox();
                 if (innerBox != null) {
                     innerBox.toFront();
@@ -84,15 +143,37 @@ public class PacketVisualizer {
         // Use a set to track shapes we've already added to prevent duplicates
         Set<Shape> addedShapes = new HashSet<>();
         
-        // Add all active packets to the scene
-        for (Packet packet : gameState.getActivePackets()) {
-            if (packet == null) {
+        // Failsafe: Process and remove any packets that have reached the end system
+        for (Iterator<Packet> it = gameState.getActivePackets().iterator(); it.hasNext(); ) {
+            Packet packet = it.next();
+            if (packet == null) continue;
+            if (packet.hasReachedEndSystem()) {
+                // Ensure coin processing happens before removal
+                if (!packet.hasProperty("counted")) {
+                    // Find the end system and process the packet
+                    for (NetworkSystem system : gameState.getSystems()) {
+                        if (system.isEndSystem()) {
+                            system.receivePacket(packet);
+                            break;
+                        }
+                    }
+                }
+                
+                it.remove();
+                if (packet.getShape() != null) {
+                    gamePane.getChildren().remove(packet.getShape());
+                }
                 continue;
             }
-            
             Shape packetShape = packet.getShape();
             if (packetShape == null || addedShapes.contains(packetShape)) {
                 continue;
+            }
+            
+            // Extra initialization check for packets during level transitions
+            if (packetShape.getStyleClass().isEmpty()) {
+                System.out.println("PacketVisualizer: Packet " + packet.getId() + " shape not properly initialized, fixing...");
+                applyPacketStyles(packet, packetShape);
             }
             
             ensurePacketVisibility(packet, packetShape);
@@ -102,9 +183,11 @@ public class PacketVisualizer {
             // Add to tracking set
             addedShapes.add(packetShape);
             
-            // Add to scene if not already there
+            // Add to scene if not already there - with extra safeguard
             if (packetShape.getParent() == null) {
                 gamePane.getChildren().add(packetShape);
+                // Ensure the packet is brought to front for visibility
+                packetShape.toFront();
             }
         }
     }
@@ -113,7 +196,6 @@ public class PacketVisualizer {
         // Always ensure packet is visible regardless of level
         packetShape.setVisible(true);
         packetShape.setOpacity(1.0);
-        System.out.println("Ensuring packet " + packet.getId() + " visibility in Level " + gameState.getCurrentLevel());
     }
     
     private void applyPacketStyles(Packet packet, Shape packetShape) {
@@ -163,8 +245,8 @@ public class PacketVisualizer {
         double centerX = system.getPosition().getX() + system.getWidth()/2;
         double centerY = system.getPosition().getY() + system.getHeight()/2;
         
-        // For intermediate systems, use the inner box
-        if (!system.isStartSystem() && !system.isEndSystem()) {
+        // For systems with inner boxes, use the inner box for positioning
+        if (system.shouldShowInnerBox()) {
             Rectangle innerBox = system.getInnerBox();
             if (innerBox != null) {
                 // Get index of packet in system's storage
@@ -557,9 +639,21 @@ public class PacketVisualizer {
             return;
         }
         
+        // During level transitions, be more aggressive about ensuring visibility
         for (Packet packet : gameState.getActivePackets()) {
             if (packet != null && packet.getShape() != null) {
                 ensurePacketVisibilityAndStyling(packet);
+                
+                // Extra safeguard: if the packet shape is not in the scene, force re-add it
+                Shape shape = packet.getShape();
+                if (shape.getParent() == null || !gamePane.getChildren().contains(shape)) {
+                    // Remove it first if it exists to prevent duplicates
+                    gamePane.getChildren().remove(shape);
+                    // Then add it back
+                    gamePane.getChildren().add(shape);
+                    shape.toFront();
+                    System.out.println("PacketVisualizer: Force re-added packet shape for packet " + packet.getId());
+                }
             }
         }
     }
@@ -577,7 +671,15 @@ public class PacketVisualizer {
         // Ensure the packet is in the scene graph
         if (packetShape.getParent() == null && gamePane != null) {
             gamePane.getChildren().add(packetShape);
-            System.out.println("Added missing packet shape to scene graph");
+            // Bring packet to front for visibility
+            packetShape.toFront();
+        }
+        
+        // Extra check: if the packet is supposed to be visible but has been removed
+        // from the scene graph, re-add it
+        if (packetShape.getParent() == null && gamePane != null && gamePane.getChildren().contains(packetShape) == false) {
+            gamePane.getChildren().add(packetShape);
+            packetShape.toFront();
         }
     }
     

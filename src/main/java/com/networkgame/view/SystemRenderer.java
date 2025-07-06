@@ -15,6 +15,10 @@ import javafx.util.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.networkgame.model.entity.Port;
+import com.networkgame.model.state.GameState;
+import com.networkgame.model.entity.system.NetworkSystem; 
+
 /**
  * Handles rendering of network systems in the game
  */
@@ -110,15 +114,17 @@ public class SystemRenderer {
         renderInnerBox(system);
         addIndicatorLamp(system);
         
-        if (!system.isStartSystem() && !system.isEndSystem()) {
+        if (system.shouldShowCapacityLabel()) {
             addCapacityLabel(system);
         }
         
-        if (system.isStartSystem()) {
+        if (system.shouldShowPlayButton()) {
             createAndAddPlayButton(system);
         }
         
-        makeSystemDraggable(system);
+        if (system.isDraggable()) {
+            makeSystemDraggable(system);
+        }
     }
 
     /**
@@ -136,16 +142,14 @@ public class SystemRenderer {
      * Add system type specific styling
      */
     private void addSystemTypeStyle(NetworkSystem system, Shape systemShape) {
-        if (system.isStartSystem()) {
-            systemShape.getStyleClass().add("system-start");
-            addSystemLabel(system, "START", 25);
-        } else if (system.isEndSystem()) {
-            systemShape.getStyleClass().add("system-end");
-            addSystemLabel(system, "END", 15);
-        } else if (system.isReference()) {
-            systemShape.getStyleClass().add("system-reference");
-        } else {
-            systemShape.getStyleClass().add("system-normal");
+        // Add the system-specific style class
+        systemShape.getStyleClass().add(system.getSystemStyleClass());
+        
+        // Add display label if the system has one
+        String displayLabel = system.getSystemDisplayLabel();
+        if (displayLabel != null) {
+            double offset = system.getSystemLabelOffset();
+            addSystemLabel(system, displayLabel, offset);
         }
     }
 
@@ -173,10 +177,10 @@ public class SystemRenderer {
     }
 
     /**
-     * Render the inner box for non-start/end systems
+     * Render the inner box for systems that support it
      */
     private void renderInnerBox(NetworkSystem system) {
-        if (!system.isStartSystem() && !system.isEndSystem()) {
+        if (system.shouldShowInnerBox()) {
             Rectangle innerBox = system.getInnerBox();
             if (innerBox != null) {
                 gamePane.getChildren().add(innerBox);
@@ -259,7 +263,7 @@ public class SystemRenderer {
         if (gameState == null) return;
         
         gameState.getSystems().stream()
-            .filter(system -> !system.isStartSystem() && !system.isEndSystem())
+            .filter(NetworkSystem::shouldTrackCapacity)
             .forEach(this::updateSystemCapacity);
     }
     

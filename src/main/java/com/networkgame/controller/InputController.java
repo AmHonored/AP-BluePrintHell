@@ -1,6 +1,7 @@
 package com.networkgame.controller;
 
-import com.networkgame.model.Port;
+import com.networkgame.model.entity.Port;
+import com.networkgame.view.GameScene;
 import javafx.animation.PauseTransition;
 import javafx.scene.input.KeyCode;
 import javafx.util.Duration;
@@ -57,10 +58,10 @@ public class InputController {
     }
     
     private void highlightPortTemporarily(Port port) {
-        mainController.getGameScene().highlightPort(port);
+        ((GameScene)mainController.getGameScene()).highlightPort(port);
         
         PauseTransition delay = new PauseTransition(Duration.millis(300));
-        delay.setOnFinished(e -> mainController.getGameScene().clearHighlights());
+        delay.setOnFinished(e -> ((GameScene)mainController.getGameScene()).clearHighlights());
         delay.play();
     }
     

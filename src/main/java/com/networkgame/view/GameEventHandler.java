@@ -22,6 +22,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.networkgame.model.entity.Port;
+import com.networkgame.model.entity.Connection;
+import com.networkgame.model.state.GameState;
+import com.networkgame.model.entity.system.NetworkSystem;
+import com.networkgame.service.audio.AudioManager;
+
 /**
  * Handles mouse events and interactions in the game
  */
@@ -354,9 +360,27 @@ public class GameEventHandler {
             return;
         }
         
+        // Check for wire collisions with systems
+        if (hasWireCollisions()) {
+            dialogManager.showErrorMessage("Network cannot be started! Some wires pass through systems. Use bend points to route around them.");
+            return;
+        }
+        
         AudioManager.getInstance().playSoundEffect(AudioManager.SoundType.CONNECTION_SUCCESS);
         gameController.resumeGame();
         startSystem.startSendingPackets(2.0);
+    }
+    
+    /**
+     * Check if any connections have collisions with systems
+     */
+    private boolean hasWireCollisions() {
+        for (Connection connection : gameState.getConnections()) {
+            if (gameState.getWireCollisionManager().hasCollisions(connection)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**

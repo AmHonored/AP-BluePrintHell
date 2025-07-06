@@ -1,7 +1,7 @@
 package com.networkgame.model;
 
 import com.networkgame.controller.GameController;
-import com.networkgame.model.AudioManager.SoundType;
+import com.networkgame.service.audio.AudioManager.SoundType;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -9,6 +9,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import com.networkgame.model.state.GameState;
+import com.networkgame.service.audio.AudioManager;
+
 
 /**
  * Model class for the in-game shop

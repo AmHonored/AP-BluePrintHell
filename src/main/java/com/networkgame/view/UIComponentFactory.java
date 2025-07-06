@@ -2,6 +2,7 @@ package com.networkgame.view;
 
 import com.networkgame.controller.GameController;
 import com.networkgame.model.*;
+import com.networkgame.model.manager.HUDManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -21,6 +22,7 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.input.MouseButton;
 import javafx.scene.Cursor;
 
+import com.networkgame.model.state.GameState;
 /**
  * Factory class for creating UI elements in the game
  */
@@ -60,7 +62,50 @@ public class UIComponentFactory {
         // Add all components to HUD pane
         hudPane.getChildren().addAll(wireBox, timeBox, lossBox, coinsBox, packetsBox);
         
+        // Register HUD components with HUD manager for toggle functionality
+        HUDManager hudManager = HUDManager.getInstance();
+        hudManager.registerHudComponent("wireBox", wireBox);
+        hudManager.registerHudComponent("lossBox", lossBox);
+        hudManager.registerHudComponent("coinsBox", coinsBox);
+        hudManager.registerHudComponent("packetsBox", packetsBox);
+        
+        // Register time components (these will always stay visible)
+        hudManager.registerTimeComponent("timeBox", timeBox);
+        hudManager.registerTimeComponent("timeProgress", timeProgressBar);
+        hudManager.registerTimeComponent("timeLabel", timeLabel);
+        hudManager.registerTimeComponent("timeProgressThumb", timeProgressThumb);
+        hudManager.registerTimeComponent("timeInput", timeInputField);
+        
         return hudPane;
+    }
+    
+    /**
+     * Create a complete HUD container with toggle button positioned below
+     */
+    public VBox createHUDWithToggle(Label wireLabel, Label outOfWireLabel, Label timeLabel, Label packetLossLabel, 
+                                    Label coinsLabel, Label packetsCollectedLabel, 
+                                    ProgressBar timeProgressBar, Circle timeProgressThumb, TextField timeInputField) {
+        
+        // Create the main HUD
+        HBox hudPane = createHUD(wireLabel, outOfWireLabel, timeLabel, packetLossLabel, coinsLabel, packetsCollectedLabel,
+                                timeProgressBar, timeProgressThumb, timeInputField);
+        
+        // Create HUD toggle button
+        Button hudToggleButton = createStyledButton("Hide HUD", "hud-toggle-button");
+        styleHudToggleButton(hudToggleButton);
+        
+        // Create container for the toggle button
+        HBox toggleContainer = new HBox();
+        toggleContainer.setAlignment(Pos.CENTER_RIGHT);
+        toggleContainer.setPadding(new Insets(5, 10, 5, 10));
+        toggleContainer.getChildren().add(hudToggleButton);
+        
+        // Create the complete HUD container
+        VBox completeHudContainer = new VBox();
+        completeHudContainer.getChildren().addAll(hudPane, toggleContainer);
+        completeHudContainer.getStyleClass().add("hud-container");
+        
+        return completeHudContainer;
     }
     
     /**
@@ -368,8 +413,8 @@ public class UIComponentFactory {
         
         lossBox.getChildren().addAll(lossTitleLabel, packetLossLabel);
         
-        // Add note for level 1 win condition
-        if (gameState.getCurrentLevel() == 1) {
+        // Add note for level 1 and 2 win conditions
+        if (gameState.getCurrentLevel() == 1 || gameState.getCurrentLevel() == 2) {
             Label winConditionNote = createStyledLabelWithInlineStyle("(Keep < 50%)", "-fx-font-size: 10px; -fx-text-fill: #f8f8f2;");
             lossBox.getChildren().add(winConditionNote);
         }
@@ -437,6 +482,21 @@ public class UIComponentFactory {
             } else {
                 gameController.resumeGame();
                 toggleButton.setText("Pause");
+            }
+        });
+    }
+    
+    private void styleHudToggleButton(Button hudToggleButton) {
+        hudToggleButton.getStyleClass().addAll(MENU_BUTTON_STYLE, "hud-toggle-button");
+        hudToggleButton.setOnAction(e -> {
+            gameController.toggleHudVisibility();
+            // Update button text and style based on HUD visibility
+            if (gameController.isHudVisible()) {
+                hudToggleButton.setText("Hide HUD");
+                hudToggleButton.getStyleClass().remove("hud-hidden");
+            } else {
+                hudToggleButton.setText("Show HUD");
+                hudToggleButton.getStyleClass().add("hud-hidden");
             }
         });
     }

@@ -1,6 +1,7 @@
 package com.networkgame.controller;
 
-import com.networkgame.model.*;
+import com.networkgame.model.state.GameState;
+import com.networkgame.model.entity.system.NetworkSystem;
 import com.networkgame.view.GameScene;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
@@ -142,7 +143,7 @@ public class GameplayController {
     }
     
     private void showTimeUpGameOver() {
-        mainController.getGameScene().showTimeUpGameOver(
+        ((GameScene)mainController.getGameScene()).showTimeUpGameOver(
             gameState.getPacketsDelivered(), 
             gameState.getLevelRequiredPackets()
         );
@@ -168,7 +169,7 @@ public class GameplayController {
     }
     
     private void withGameScene(Consumer<GameScene> action) {
-        Optional.ofNullable(mainController.getGameScene()).ifPresent(action);
+        Optional.ofNullable(((GameScene)mainController.getGameScene())).ifPresent(action);
     }
     
     /**

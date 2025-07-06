@@ -2,7 +2,7 @@ package com.networkgame.view;
 
 import com.networkgame.controller.GameController;
 import com.networkgame.model.*;
-import com.networkgame.model.Port;
+import com.networkgame.model.entity.Port;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -17,12 +17,19 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.Line;
+import javafx.geometry.Point2D;
 
 import javafx.animation.AnimationTimer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GameScene {
+import com.networkgame.model.entity.Connection;
+import com.networkgame.model.entity.system.NetworkSystem;
+import com.networkgame.model.state.GameState;
+import com.networkgame.model.state.UIUpdateListener;
+import com.networkgame.model.manager.HUDManager;
+
+public class GameScene implements UIUpdateListener {
     private Scene scene;
     private GameController gameController;
     private GameState gameState;
@@ -103,12 +110,17 @@ public class GameScene {
         // Create toggle button
         toggleButton = new Button("Pause");
         
-        // Create HUD at top
-        HBox hudPane = uiComponentFactory.createHUD(
+        // Create HUD at top with toggle button
+        VBox hudContainer = uiComponentFactory.createHUDWithToggle(
             wireLabel, outOfWireLabel, timeLabel, packetLossLabel, coinsLabel, packetsCollectedLabel,
             timeProgressBar, timeProgressThumb, timeInputField);
-        hudPane.getStyleClass().add("hud-pane");
-        mainLayout.setTop(hudPane);
+        mainLayout.setTop(hudContainer);
+        
+        // Register HUD with HUD manager
+        HUDManager hudManager = HUDManager.getInstance();
+        if (hudContainer.getChildren().get(0) instanceof HBox) {
+            hudManager.setMainHudPane((HBox) hudContainer.getChildren().get(0));
+        }
         
         // Create controls at bottom
         HBox controlsPane = uiComponentFactory.createControls(toggleButton);
@@ -129,7 +141,7 @@ public class GameScene {
         setupGameEvents();
         
         // Set the GameScene in the GameState for callbacks
-        gameState.setGameScene(this);
+        gameState.setUIUpdateListener(this);
     }
     
     /**
@@ -183,19 +195,7 @@ public class GameScene {
         HUDManager hudManager = HUDManager.getInstance();
         hudManager.setHUDContainer(gamePane);
         
-        // Register time-related components
-        if (timeProgressBar != null) {
-            hudManager.registerTimeComponent("timeProgress", timeProgressBar);
-        }
-        if (timeLabel != null) {
-            hudManager.registerTimeComponent("timeLabel", timeLabel);
-        }
-        if (timeProgressThumb != null) {
-            hudManager.registerTimeComponent("timeProgressThumb", timeProgressThumb);
-        }
-        if (timeInputField != null) {
-            hudManager.registerTimeComponent("timeInput", timeInputField);
-        }
+        // Note: HUD components are now registered in UIComponentFactory.createHUD()
     }
     
     /**
@@ -268,9 +268,7 @@ public class GameScene {
         
         // Throttle updates to prevent UI lag, but skip throttling for critical updates
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastRenderTime < 30) { // Max ~33 renders per second, but don't return
-            System.out.println("Rapid HUD update: " + (currentTime - lastRenderTime) + "ms since last update");
-        }
+
         lastRenderTime = currentTime;
         
         // Make sure all packets are properly visible
@@ -305,7 +303,10 @@ public class GameScene {
         }
         
         packetLossLabel.setText(String.format("%.1f%%", gameState.getPacketLossPercentage()));
-        coinsLabel.setText(String.format("%d", gameState.getCoins()));
+        
+        // Update coins
+        int currentCoins = gameState.getCoins();
+        coinsLabel.setText(String.format("%d", currentCoins));
         
         // Update time label
         int timeRemaining = gameState.getLevelDuration() - (int)gameState.getElapsedTime();
@@ -318,11 +319,17 @@ public class GameScene {
         int packetsDelivered = gameState.getPacketsDelivered();
         String packetsText = String.format("%d", packetsDelivered);
         
-        // Always update this immediately
-        packetsCollectedLabel.setText(packetsText);
-        
-        // Make sure it's visible in case it was hidden
-        packetsCollectedLabel.setVisible(true);
+        // Always show packets collected label, but with different styling for level 2
+        if (gameState.getCurrentLevel() == 2) {
+            packetsCollectedLabel.setText(packetsText);
+            packetsCollectedLabel.setVisible(true);
+            // Add a note to indicate it's just for tracking
+            packetsCollectedLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #50fa7b; -fx-opacity: 0.8;");
+        } else {
+            packetsCollectedLabel.setText(packetsText);
+            packetsCollectedLabel.setVisible(true);
+            packetsCollectedLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #50fa7b;");
+        }
         
         // Flash effect for packet update
         if (!packetsCollectedLabel.getText().equals(packetsText)) {
@@ -467,6 +474,18 @@ public class GameScene {
     }
     
     /**
+     * Update the coins label directly
+     * @param coinsCount The current number of coins
+     */
+    public void updateCoinsLabel(int coinsCount) {
+        if (coinsLabel != null) {
+            javafx.application.Platform.runLater(() -> {
+                coinsLabel.setText(String.format("%d", coinsCount));
+            });
+        }
+    }
+    
+    /**
      * Show game over screen when system capacity exceeded
      */
     public void showCapacityExceededGameOver(NetworkSystem system) {
@@ -522,8 +541,6 @@ public class GameScene {
         if (packetVisualizer != null) {
             packetVisualizer.cleanup();
         }
-        
-        System.out.println("GameScene resources cleaned up");
     }
     
     /**
@@ -555,5 +572,26 @@ public class GameScene {
      */
     public Scene getScene() {
         return scene;
+    }
+    
+    public Pane getGamePane() {
+        return gamePane;
+    }
+    
+    // Implementation of UIUpdateListener interface methods
+    
+    @Override
+    public void createImpactEffect(Point2D position) {
+        // TODO: Implement impact effect visualization
+        // For now, just trigger a render to update the UI
+        render();
+    }
+    
+    @Override
+    public void onGameStateUpdated() {
+        // Trigger a general UI update when game state changes
+        javafx.application.Platform.runLater(() -> {
+            render();
+        });
     }
 } 

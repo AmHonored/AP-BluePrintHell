@@ -1,8 +1,11 @@
 package com.networkgame.controller;
 
-import com.networkgame.model.*;
-import com.networkgame.model.AudioManager.SoundType;
+import com.networkgame.model.manager.LevelManager;
+import com.networkgame.model.state.GameState;
+import com.networkgame.model.entity.system.NetworkSystem;
+import com.networkgame.service.audio.AudioManager.SoundType;
 import com.networkgame.view.GameScene;
+   
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +39,7 @@ public class LevelController {
         // Setup game scene and start
         GameScene gameScene = new GameScene(mainController, gameState);
         mainController.setGameScene(gameScene);
-        mainController.getAudioManager().playBackgroundMusic();
+        mainController.getAudioManager().switchToGameMusic();
         mainController.getPrimaryStage().setScene(gameScene.getScene());
         
         levelCompletionHandled = false;
@@ -128,7 +131,7 @@ public class LevelController {
         
         int currentLevel = gameState.getCurrentLevel();
         levelManager.unlockLevel(currentLevel + 1);
-        mainController.getGameScene().showLevelComplete(currentLevel);
+        ((GameScene)mainController.getGameScene()).showLevelComplete(currentLevel);
     }
     
     public void proceedToNextLevel() {

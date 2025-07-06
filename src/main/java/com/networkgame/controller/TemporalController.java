@@ -1,6 +1,7 @@
 package com.networkgame.controller;
 
-import com.networkgame.model.*;
+import com.networkgame.model.state.GameState;
+import com.networkgame.view.GameScene;
 import java.util.ArrayList;
 
 public class TemporalController {
@@ -28,11 +29,11 @@ public class TemporalController {
             mainController.pauseGame();
         }
         
-        if (mainController.getGameScene() != null) {
+        if (((GameScene)mainController.getGameScene()) != null) {
             if (isTemporalControlMode) {
-                mainController.getGameScene().showTemporalControlIndicator();
+                ((GameScene)mainController.getGameScene()).showTemporalControlIndicator();
             } else {
-                mainController.getGameScene().hideTemporalControlIndicator();
+                ((GameScene)mainController.getGameScene()).hideTemporalControlIndicator();
             }
         }
     }
@@ -52,8 +53,8 @@ public class TemporalController {
         double adjustment = forward ? TIME_INCREMENT : -TIME_INCREMENT;
         gameState.setTemporalProgress(Math.max(MIN_PROGRESS, Math.min(MAX_PROGRESS, progress + adjustment)));
         
-        if (mainController.getGameScene() != null) {
-            mainController.getGameScene().updateTemporalProgress();
+        if (((GameScene)mainController.getGameScene()) != null) {
+            ((GameScene)mainController.getGameScene()).updateTemporalProgress();
         }
     }
     
@@ -88,12 +89,12 @@ public class TemporalController {
         // Reset game speed and update UI
         mainController.getGameplayController().setGameSpeed(NORMAL_GAME_SPEED);
         
-        if (mainController.getGameScene() != null) {
+        if (((GameScene)mainController.getGameScene()) != null) {
             int levelDuration = gameState.getLevelDuration();
-            mainController.getGameScene().updateTimeProgress(time, levelDuration);
-            mainController.getGameScene().createTimeJumpEffect();
-            mainController.getGameScene().render();
-            mainController.getGameScene().updatePacketLossLabel(gameState.getPacketLossPercentage());
+            ((GameScene)mainController.getGameScene()).updateTimeProgress(time, levelDuration);
+            ((GameScene)mainController.getGameScene()).createTimeJumpEffect();
+            ((GameScene)mainController.getGameScene()).render();
+            ((GameScene)mainController.getGameScene()).updatePacketLossLabel(gameState.getPacketLossPercentage());
         }
         
         if (wasRunning) mainController.resumeGame();

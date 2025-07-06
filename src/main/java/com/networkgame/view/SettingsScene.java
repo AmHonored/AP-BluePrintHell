@@ -1,8 +1,8 @@
 package com.networkgame.view;
 
 import com.networkgame.controller.GameController;
-import com.networkgame.model.AudioManager;
-import com.networkgame.model.AudioManager.SoundType;
+import com.networkgame.service.audio.AudioManager;
+import com.networkgame.service.audio.AudioManager.SoundType;
 import javafx.animation.AnimationTimer;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;

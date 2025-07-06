@@ -1,7 +1,8 @@
 package com.networkgame.controller;
 
-import com.networkgame.model.GameState;
+import com.networkgame.model.state.GameState;
 import com.networkgame.service.GameCleanupService;
+import com.networkgame.view.GameScene;
 import com.networkgame.view.ShopScene;
 import javafx.scene.Scene;
 
@@ -24,6 +25,9 @@ public class UIController {
         cleanupService.stopAllGameOperations(mainController);
         cleanupService.cleanupGameResources(mainController.getGameState());
         
+        // Switch to menu music
+        mainController.getAudioManager().switchToMenuMusic();
+        
         switchScene(mainController.getMainMenuScene().getScene());
     }
     
@@ -31,6 +35,9 @@ public class UIController {
      * Shows the level select screen.
      */
     public void showLevelSelect() {
+        // Ensure menu music is playing (in case we came from game)
+        mainController.getAudioManager().switchToMenuMusic();
+        
         switchScene(mainController.getLevelSelectScene().getScene());
     }
     
@@ -38,6 +45,9 @@ public class UIController {
      * Shows the settings screen.
      */
     public void showSettings() {
+        // Ensure menu music is playing (in case we came from game)
+        mainController.getAudioManager().switchToMenuMusic();
+        
         switchScene(mainController.getSettingsScene().getScene());
     }
     
