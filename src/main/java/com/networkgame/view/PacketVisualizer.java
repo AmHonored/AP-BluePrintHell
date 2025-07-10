@@ -148,46 +148,38 @@ public class PacketVisualizer {
             Packet packet = it.next();
             if (packet == null) continue;
             if (packet.hasReachedEndSystem()) {
-                // Ensure coin processing happens before removal
-                if (!packet.hasProperty("counted")) {
-                    // Find the end system and process the packet
-                    for (NetworkSystem system : gameState.getSystems()) {
-                        if (system.isEndSystem()) {
-                            system.receivePacket(packet);
-                            break;
-                        }
-                    }
+                System.out.println("PacketVisualizer: Removing packet " + packet.getId() + " - reached end system");
+                it.remove();
+                continue;
+            }
+            
+            Shape packetShape = packet.getShape();
+            if (packetShape != null && !addedShapes.contains(packetShape)) {
+                // Debug logging for DDoS packets
+                if (packet.hasProperty("originalType")) {
+                    System.out.println("PacketVisualizer: Processing DDoS packet " + packet.getId() + " for display");
+                    System.out.println("PacketVisualizer:   - Position: " + packet.getPosition());
+                    System.out.println("PacketVisualizer:   - Has connection: " + (packet.getCurrentConnection() != null));
+                    System.out.println("PacketVisualizer:   - Shape visible: " + packetShape.isVisible());
                 }
                 
-                it.remove();
-                if (packet.getShape() != null) {
-                    gamePane.getChildren().remove(packet.getShape());
+                // Ensure packet is properly initialized
+                if (packetShape.getStyleClass().isEmpty()) {
+                    applyPacketStyles(packet, packetShape);
                 }
-                continue;
-            }
-            Shape packetShape = packet.getShape();
-            if (packetShape == null || addedShapes.contains(packetShape)) {
-                continue;
-            }
-            
-            // Extra initialization check for packets during level transitions
-            if (packetShape.getStyleClass().isEmpty()) {
-                System.out.println("PacketVisualizer: Packet " + packet.getId() + " shape not properly initialized, fixing...");
-                applyPacketStyles(packet, packetShape);
-            }
-            
-            ensurePacketVisibility(packet, packetShape);
-            applyPacketStyles(packet, packetShape);
-            positionPacket(packet);
-            
-            // Add to tracking set
-            addedShapes.add(packetShape);
-            
-            // Add to scene if not already there - with extra safeguard
-            if (packetShape.getParent() == null) {
-                gamePane.getChildren().add(packetShape);
-                // Ensure the packet is brought to front for visibility
-                packetShape.toFront();
+                
+                // Ensure packet visibility and positioning
+                ensurePacketVisibility(packet, packetShape);
+                positionPacket(packet);
+                
+                // Add to scene if not already there
+                if (!gamePane.getChildren().contains(packetShape)) {
+                    gamePane.getChildren().add(packetShape);
+                    if (packet.hasProperty("originalType")) {
+                        System.out.println("PacketVisualizer: Added DDoS packet " + packet.getId() + " to scene");
+                    }
+                }
+                addedShapes.add(packetShape);
             }
         }
     }
@@ -579,24 +571,30 @@ public class PacketVisualizer {
             return;
         }
         
+        // Debug logging for DDoS packets
+        if (packet.hasProperty("originalType")) {
+            System.out.println("PacketVisualizer: Rendering DDoS packet " + packet.getId() + " along connection");
+        }
+        
         // Calculate visual offset for packet from the wire
         double offsetX = 0;
         double offsetY = 0;
         
         // Add small random variation to position based on packet noise
         if (packet.getNoiseLevel() > 0) {
-            double noiseLevel = packet.getNoiseLevel() / (double)packet.getSize();
-            double vibration = noiseLevel * 3.0; // Scale the vibration with noise level
-            offsetX += (Math.random() - 0.5) * vibration;
-            offsetY += (Math.random() - 0.5) * vibration;
+            double noiseOffset = packet.getNoiseLevel() * 2.0; // Increased multiplier for more visible effect
+            offsetX = (Math.random() - 0.5) * noiseOffset;
+            offsetY = (Math.random() - 0.5) * noiseOffset;
         }
         
-        // Set the packet position with the calculated offset
-        packet.getShape().setTranslateX(offsetX);
-        packet.getShape().setTranslateY(offsetY);
+        // Apply visual offset to packet
+        Point2D currentPos = packet.getPosition();
+        packet.getShape().setTranslateX(currentPos.getX() + offsetX);
+        packet.getShape().setTranslateY(currentPos.getY() + offsetY);
         
-        // Update the packet's visual appearance based on health
-        packet.updateShapeAppearance();
+        // Ensure packet is visible
+        packet.getShape().setVisible(true);
+        packet.getShape().toFront();
     }
     
     /**

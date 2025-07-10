@@ -75,6 +75,7 @@ public class LevelController {
             .collect(Collectors.toList());
             
         int currentLevel = gameState.getCurrentLevel();
+        LevelManager.Level level = levelManager.getLevel(currentLevel);
         javafx.animation.Timeline timeline = new javafx.animation.Timeline();
         
         // Create staggered start times for each system
@@ -84,7 +85,7 @@ public class LevelController {
                 javafx.util.Duration.seconds(1.0 + i * 0.5),
                 event -> {
                     NetworkSystem system = startSystems.get(index);
-                    double interval = calculatePacketInterval(system, currentLevel);
+                    double interval = level != null ? level.getPacketSpawnInterval() : calculatePacketInterval(system, currentLevel);
                     System.out.println("Starting packet generation for system: " + 
                                       system.getLabel() + " with interval: " + interval + "s");
                     system.startSendingPackets(interval);

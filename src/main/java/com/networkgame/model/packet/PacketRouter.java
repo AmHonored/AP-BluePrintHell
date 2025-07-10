@@ -27,6 +27,14 @@ public class PacketRouter {
     public void addPacket(Packet packet) {
         if (activePackets.contains(packet)) return;
         
+        // 🎨 DEBUG: Track DDoS packets specifically
+        if (packet.hasProperty("isDDoSPacket") && (boolean)packet.getProperty("isDDoSPacket", false)) {
+            System.out.println("PacketRouter: 🚀 Adding DDoS packet " + packet.getId() + " (" + packet.getType() + ") to connection");
+            System.out.println("PacketRouter:   - From: " + connection.getSourcePort().getSystem().getLabel());
+            System.out.println("PacketRouter:   - To: " + connection.getTargetPort().getSystem().getLabel());
+            System.out.println("PacketRouter:   - Connection from " + connection.getSourcePort().getType() + " to " + connection.getTargetPort().getType());
+        }
+        
         activePackets.add(packet);
         available = false;
         
@@ -118,6 +126,16 @@ public class PacketRouter {
             );
         }
         
+        // 🎨 DEBUG: Track DDoS packet progress
+        if (packet.hasProperty("isDDoSPacket") && (boolean)packet.getProperty("isDDoSPacket", false)) {
+            if (!packet.hasProperty("lastProgressLog") || 
+                System.currentTimeMillis() - (long)packet.getProperty("lastProgressLog", 0L) > 500) {
+                System.out.println("PacketRouter: 📍 DDoS packet " + packet.getId() + " progress: " + 
+                                 String.format("%.2f", progress * 100) + "% (speed: " + String.format("%.1f", speed) + ")");
+                packet.setProperty("lastProgressLog", System.currentTimeMillis());
+            }
+        }
+        
         if (progress >= 1.0) {
             handlePacketArrival(packet, packetsToRemove);
         }
@@ -127,19 +145,27 @@ public class PacketRouter {
         Port targetPort = connection.getTargetPort();
         NetworkSystem targetSystem = targetPort.getSystem();
         
+        System.out.println("=== PACKET ROUTER: Packet " + packet.getId() + " (" + packet.getType() + ") arriving at " + 
+                          targetSystem.getLabel() + " via " + targetPort.getType() + " port ===");
+        System.out.println("PacketRouter: Packet compatibility with port: " + (targetPort.getType() == packet.getType()));
+        System.out.println("PacketRouter: Target system is end system: " + targetSystem.isEndSystem());
+        
         packet.setPosition(targetPort.getPosition());
         packet.setProperty("progress", 1.0);
         packetsToRemove.add(packet);
         packet.setCurrentConnection(null);
         
+        System.out.println("PacketRouter: Calling targetSystem.receivePacket for packet " + packet.getId());
         targetSystem.receivePacket(packet);
         
         if (targetSystem.isEndSystem()) {
+            System.out.println("PacketRouter: Marking packet " + packet.getId() + " as reached end system");
             packet.setReachedEndSystem(true);
         }
         
         setAvailable(true);
         notifyConnectionAvailable();
+        System.out.println("=== PACKET ROUTER: Packet " + packet.getId() + " processing COMPLETE ===");
     }
     
     public void removePacket(Packet packet) {

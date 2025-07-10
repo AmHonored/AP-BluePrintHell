@@ -14,6 +14,7 @@ import com.networkgame.model.entity.Connection;
 import com.networkgame.model.entity.packettype.messenger.SquarePacket;
 import com.networkgame.model.entity.packettype.messenger.TrianglePacket;
 import com.networkgame.model.entity.packettype.messenger.HexagonPacket;
+import com.networkgame.model.entity.packettype.messenger.ProtectedPacket;
 
 /**
  * Manages all timelines and animations for the network system
@@ -216,6 +217,8 @@ public class TimelineManager {
             return new TrianglePacket(position);
         } else if (type == Packet.PacketType.HEXAGON) {
             return new HexagonPacket(position);
+        } else if (type == Packet.PacketType.PROTECTED) {
+            return new ProtectedPacket(position);
         }
         return null;
     }
@@ -239,6 +242,13 @@ public class TimelineManager {
      */
     private void generateHexagonPacket() {
         createAndGenerateVisiblePacket(Packet.PacketType.HEXAGON, "Hexagon");
+    }
+    
+    /**
+     * Generate a protected packet on an available output port
+     */
+    private void generateProtectedPacket() {
+        createAndGenerateVisiblePacket(Packet.PacketType.PROTECTED, "Protected");
     }
     
     /**
@@ -306,20 +316,35 @@ public class TimelineManager {
     }
     
     /**
-     * Start packet generation for level 3 (hexagon test level)
+     * Start packet generation for level 3 (DDoS system test level)
      * @param interval base interval for packet generation
      */
     private void startLevel3HexagonPackets(double interval) {
         packetGenerationTimeline = new Timeline();
         packetGenerationTimeline.setCycleCount(Timeline.INDEFINITE);
         
-        // Generate hexagon packets at regular intervals
-        KeyFrame hexagonFrame = new KeyFrame(
+        // Generate packets of all three types cyclically for DDoS system test
+        KeyFrame packetFrame = new KeyFrame(
             Duration.seconds(interval),
-            event -> generateHexagonPacket()
+            event -> {
+                // Cycle through packet types: Square -> Triangle -> Hexagon
+                int packetType = packetWave % 3;
+                switch (packetType) {
+                    case 0:
+                        generateSquarePacket();
+                        break;
+                    case 1:
+                        generateTrianglePacket();
+                        break;
+                    case 2:
+                        generateHexagonPacket();
+                        break;
+                }
+                packetWave++;
+            }
         );
         
-        packetGenerationTimeline.getKeyFrames().add(hexagonFrame);
+        packetGenerationTimeline.getKeyFrames().add(packetFrame);
         packetGenerationTimeline.play();
         
         startPacketTransferTimeline();
@@ -611,6 +636,8 @@ public class TimelineManager {
             ((TrianglePacket) packet).adjustSpeedForPort(outputPort);
         } else if (packet instanceof HexagonPacket) {
             ((HexagonPacket) packet).adjustSpeedForPort(outputPort);
+        } else if (packet instanceof ProtectedPacket) {
+            ((ProtectedPacket) packet).adjustSpeedForPort(outputPort);
         }
         
         // Use consistent slow speed in level 1 for clear visibility

@@ -7,6 +7,7 @@ com\networkgame\model\entity\packettype\messenger\TrianglePacket.class
 com\networkgame\model\level\HexagonTestLevel$PortType.class
 com\networkgame\model\entity\Connection.class
 com\networkgame\controller\GameplayController.class
+com\networkgame\model\entity\system\DdosSystem$1.class
 com\networkgame\model\entity\SquarePort.class
 com\networkgame\controller\UIController.class
 com\networkgame\view\SystemRenderer.class
@@ -18,12 +19,16 @@ com\networkgame\model\packet\PacketAnimator.class
 com\networkgame\model\manager\WireCollisionManager$BendPoint.class
 com\networkgame\view\ConnectionManager.class
 com\networkgame\model\entity\system\NetworkSystem.class
+com\networkgame\model\entity\system\SpySystem.class
+com\networkgame\model\entity\system\DdosSystem.class
 com\networkgame\model\manager\HUDManager.class
 com\networkgame\model\state\LevelProgressTracker.class
+com\networkgame\model\entity\system\DistributorSystem.class
 com\networkgame\controller\InputController$1.class
 com\networkgame\model\system\CollisionSystem.class
 com\networkgame\model\manager\LevelManager.class
 com\networkgame\service\WireCollisionService$BendPoint.class
+com\networkgame\model\entity\system\MergerSystem.class
 com\networkgame\view\PacketVisualizer.class
 com\networkgame\view\GameScene$1.class
 com\networkgame\view\MainMenuScene.class
@@ -32,6 +37,8 @@ com\networkgame\service\audio\AudioManager$SoundType.class
 com\networkgame\model\manager\ConnectionManager.class
 com\networkgame\model\entity\packettype\messenger\SquarePacket.class
 com\networkgame\model\state\UIUpdateListener.class
+com\networkgame\model\entity\packettype\messenger\ProtectedPacket$1.class
+com\networkgame\model\entity\system\VpnSystem.class
 com\networkgame\model\entity\system\NetworkSystemCallbacks.class
 com\networkgame\view\GameEventHandler.class
 com\networkgame\model\entity\HexagonPort.class
@@ -82,8 +89,10 @@ com\networkgame\model\level\Level1.class
 com\networkgame\model\packet\PacketLifecycle$1.class
 com\networkgame\model\level\Level1$PortType.class
 com\networkgame\model\level\HexagonTestLevel.class
+com\networkgame\model\entity\packettype\messenger\ProtectedPacket.class
 com\networkgame\view\SettingsScene$1.class
 com\networkgame\model\manager\PowerUpManager.class
 com\networkgame\model\system\ImpactEffectSystem.class
 com\networkgame\view\ShopScene.class
+com\networkgame\model\entity\system\DecoySystem.class
 com\networkgame\controller\GameController.class

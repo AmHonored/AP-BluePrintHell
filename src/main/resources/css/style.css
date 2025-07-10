@@ -430,6 +430,96 @@
     -fx-effect: dropshadow(gaussian, rgba(163,66,66,0.7), 10, 0, 0, 0);
 }
 
+/* Spy System - Distinctive dark stealth appearance */
+.spy-system {
+    -fx-fill: linear-gradient(to bottom, #1a1a2e, #0f0f1a);
+    -fx-stroke: #8a2be2;
+    -fx-stroke-width: 3;
+    -fx-stroke-dash-array: 5 3;
+    -fx-effect: dropshadow(gaussian, rgba(138,43,226,0.8), 12, 0, 0, 0);
+    -fx-arc-width: 8;
+    -fx-arc-height: 8;
+}
+
+/* Active spy system with pulsing effect */
+.spy-system.system-active {
+    -fx-effect: dropshadow(gaussian, rgba(138,43,226,1.0), 15, 0, 0, 0);
+}
+
+/* Spy system reference (in shop) */
+.spy-system.system-reference {
+    -fx-fill: linear-gradient(to bottom, #2a2a3e, #1f1f2a);
+    -fx-stroke: #6a1b92;
+    -fx-stroke-width: 2;
+    -fx-stroke-dash-array: 3 2;
+    -fx-effect: dropshadow(gaussian, rgba(138,43,226,0.5), 8, 0, 0, 0);
+}
+
+/* DDoS System - Malicious dark red appearance with menacing effects */
+.ddos-system {
+    -fx-fill: linear-gradient(to bottom, #2a0000, #1a0000);
+    -fx-stroke: #ff0000;
+    -fx-stroke-width: 4;
+    -fx-stroke-dash-array: 8 4 2 4;
+    -fx-effect: dropshadow(gaussian, rgba(255,0,0,0.9), 15, 0, 0, 0);
+    -fx-arc-width: 4;
+    -fx-arc-height: 4;
+}
+
+/* Active DDoS system with intense pulsing red glow */
+.ddos-system.system-active {
+    -fx-fill: linear-gradient(to bottom, #3a0000, #2a0000);
+    -fx-stroke: #ff3333;
+    -fx-stroke-width: 5;
+    -fx-effect: dropshadow(gaussian, rgba(255,51,51,1.0), 20, 0, 0, 0);
+}
+
+/* DDoS system reference (in shop) */
+.ddos-system.system-reference {
+    -fx-fill: linear-gradient(to bottom, #1a0000, #0f0000);
+    -fx-stroke: #cc0000;
+    -fx-stroke-width: 3;
+    -fx-stroke-dash-array: 6 3 2 3;
+    -fx-effect: dropshadow(gaussian, rgba(204,0,0,0.6), 10, 0, 0, 0);
+}
+
+/* VPN System - Secure cyan blue appearance with encryption effects */
+.vpn-system {
+    -fx-fill: linear-gradient(to bottom, #003366, #001a33);
+    -fx-stroke: #00bfff;
+    -fx-stroke-width: 3;
+    -fx-stroke-dash-array: 4 2;
+    -fx-effect: dropshadow(gaussian, rgba(0,191,255,0.8), 12, 0, 0, 0);
+    -fx-arc-width: 6;
+    -fx-arc-height: 6;
+}
+
+/* Active VPN system with enhanced cyan glow */
+.vpn-system.system-active {
+    -fx-fill: linear-gradient(to bottom, #004080, #002040);
+    -fx-stroke: #00ffff;
+    -fx-stroke-width: 4;
+    -fx-effect: dropshadow(gaussian, rgba(0,255,255,1.0), 18, 0, 0, 0);
+}
+
+/* VPN system reference (in shop) */
+.vpn-system.system-reference {
+    -fx-fill: linear-gradient(to bottom, #002040, #001020);
+    -fx-stroke: #0099cc;
+    -fx-stroke-width: 2;
+    -fx-stroke-dash-array: 3 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,153,204,0.6), 8, 0, 0, 0);
+}
+
+/* Failed VPN system (red indicator) */
+.vpn-system.vpn-failed {
+    -fx-fill: linear-gradient(to bottom, #330000, #1a0000);
+    -fx-stroke: #ff3333;
+    -fx-stroke-width: 3;
+    -fx-stroke-dash-array: 2 4;
+    -fx-effect: dropshadow(gaussian, rgba(255,51,51,0.8), 12, 0, 0, 0);
+}
+
 .system-label {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
@@ -475,6 +565,21 @@
 .indicator-lamp-on {
     -fx-fill: #0077FF;
     -fx-effect: dropshadow(gaussian, rgba(0,119,255,0.7), 10, 0, 0, 0);
+}
+
+/* VPN System Indicator Lamp Styles */
+.vpn-lamp-on {
+    -fx-fill: #00FFFF;
+    -fx-effect: dropshadow(gaussian, rgba(0,255,255,0.8), 12, 0, 0, 0);
+    -fx-stroke: #00CCCC;
+    -fx-stroke-width: 1.5;
+}
+
+.vpn-lamp-failed {
+    -fx-fill: #FF0000;
+    -fx-effect: dropshadow(gaussian, rgba(255,0,0,0.9), 15, 0, 0, 0);
+    -fx-stroke: #CC0000;
+    -fx-stroke-width: 2;
 }
 
 /* HUD Control Panel Styles */

@@ -117,7 +117,7 @@ public class IntermediateSystem extends BaseSystem {
     
     @Override
     public boolean isDraggable() {
-        return true; // Intermediate systems can be moved
+        return false; // Intermediate systems are not draggable in test levels
     }
     
     // System-specific visual management behavior

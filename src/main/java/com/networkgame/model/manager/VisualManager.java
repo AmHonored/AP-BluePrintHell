@@ -49,6 +49,8 @@ public class VisualManager {
     private static final Color CRITICAL_COLOR = Color.rgb(220, 60, 0);
     private static final Color LAMP_ON_COLOR = Color.rgb(0, 119, 255);
     private static final Color LAMP_OFF_COLOR = Color.BLACK;
+    private static final Color VPN_LAMP_ON_COLOR = Color.CYAN; // Cyan blue for VPN systems
+    private static final Color VPN_LAMP_FAILED_COLOR = Color.RED; // Red for failed VPN systems
     private static final Color ENHANCED_STORAGE_COLOR = Color.rgb(60, 70, 120);
 
     // Class fields
@@ -375,6 +377,55 @@ public class VisualManager {
      * Update indicator lamp based on port connection status
      */
     public void updateIndicatorLamp() {
+        // Check if this is a VPN system with special indicator behavior
+        boolean isVpnSystem = "vpn-system".equals(parentSystem.getSystemStyleClass());
+        
+        if (isVpnSystem) {
+            updateVpnIndicatorLamp();
+        } else {
+            updateStandardIndicatorLamp();
+        }
+    }
+    
+    /**
+     * Update indicator lamp for VPN systems (cyan when operational, red when failed, black when off)
+     */
+    private void updateVpnIndicatorLamp() {
+        // Check if VPN system has failed
+        try {
+            java.lang.reflect.Method isFailedMethod = parentSystem.getClass().getMethod("isFailed");
+            boolean isFailed = (Boolean) isFailedMethod.invoke(parentSystem);
+            
+            if (isFailed) {
+                // VPN failed - show red
+                indicatorLamp.setFill(VPN_LAMP_FAILED_COLOR);
+                indicatorLamp.getStyleClass().removeAll("indicator-lamp-off", "indicator-lamp-on", "vpn-lamp-on");
+                indicatorLamp.getStyleClass().add("vpn-lamp-failed");
+                return;
+            }
+        } catch (Exception e) {
+            // If we can't check failure status, fall back to normal behavior
+        }
+        
+        boolean isCorrectlyConnected = checkCorrectConnections();
+        
+        if (isCorrectlyConnected) {
+            // VPN operational - show cyan
+            indicatorLamp.setFill(VPN_LAMP_ON_COLOR);
+            indicatorLamp.getStyleClass().removeAll("indicator-lamp-off", "indicator-lamp-on", "vpn-lamp-failed");
+            indicatorLamp.getStyleClass().add("vpn-lamp-on");
+        } else {
+            // VPN off - show black
+            indicatorLamp.setFill(LAMP_OFF_COLOR);
+            indicatorLamp.getStyleClass().removeAll("indicator-lamp-on", "vpn-lamp-on", "vpn-lamp-failed");
+            indicatorLamp.getStyleClass().add("indicator-lamp-off");
+        }
+    }
+    
+    /**
+     * Update indicator lamp for standard systems (blue when on, black when off)
+     */
+    private void updateStandardIndicatorLamp() {
         boolean isCorrectlyConnected = checkCorrectConnections();
         
         if (isCorrectlyConnected) {

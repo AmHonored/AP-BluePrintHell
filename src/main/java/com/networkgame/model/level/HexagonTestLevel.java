@@ -1,74 +1,108 @@
 package com.networkgame.model.level;
 
 import javafx.geometry.Point2D;
-import com.networkgame.model.entity.HexagonPort;
 import com.networkgame.model.entity.SquarePort;
+import com.networkgame.model.entity.TrianglePort;
+import com.networkgame.model.entity.HexagonPort;
 import com.networkgame.model.entity.system.NetworkSystem;
 import com.networkgame.model.manager.LevelManager;
 import com.networkgame.model.entity.Port;
+import com.networkgame.model.entity.Packet;
 import com.networkgame.model.state.GameState;
 
 /**
- * HexagonTestLevel - A test level specifically designed to test hexagon packets
- * and verify that the coin HUD updates correctly when they reach the end system.
+ * DDoS System Test Level
+ * Layout: START -> DDoS -> END
+ * 
+ * All systems have 3 port types (Square, Triangle, Hexagon)
+ * Start system generates all 3 packet types
+ * DDoS system sends packets to incompatible ports (malicious behavior)
+ * End system receives all packet types
  */
 public class HexagonTestLevel {
     
     public static LevelManager.Level createLevel(GameState gameState) {
-        // Create the hexagon test level
-        LevelManager.Level level = new LevelManager.Level(3, "Hexagon Test Level");
-        level.setAtarEnabled(true); // Disable impact wave effects for cleaner testing
+        // Create DDoS system test level
+        LevelManager.Level level = new LevelManager.Level(3, "DDoS System Test");
+        level.setAtarEnabled(false);
         
-        // Create a simple source-to-destination setup
-        NetworkSystem sourceSystem = createSystem(gameState, 150, 100, true, "Hexagon Source", true, false);
-        NetworkSystem destinationSystem = createSystem(gameState, 550, 100, true, "Hexagon Destination", false, true);
+        // Simple linear layout: Start -> DDoS -> End
+        NetworkSystem startSystem = createStartSystem(gameState, 150, 200, "START");
+        NetworkSystem ddosSystem = createDdosSystem(gameState, 400, 200, "DDoS");
+        NetworkSystem endSystem = createEndSystem(gameState, 650, 200, "END");
         
-        // Configure source system with hexagon output ports
-        setupSourceSystem(sourceSystem);
+        // Setup all systems with 3 port types each
+        setupStartSystem(startSystem);     // 3 output ports (Square, Triangle, Hexagon)
+        setupDdosSystem(ddosSystem);       // 3 input, 3 output ports
+        setupEndSystem(endSystem);         // 3 input ports (Square, Triangle, Hexagon)
         
-        // Configure destination system with hexagon input ports
-        setupDestinationSystem(destinationSystem);
+        // Add all systems to level
+        level.addSystem(startSystem);
+        level.addSystem(ddosSystem);
+        level.addSystem(endSystem);
         
-        // Add systems to level
-        level.addSystem(sourceSystem);
-        level.addSystem(destinationSystem);
+        // Configure level parameters
+        level.setWireLength(2000);
+        level.setPacketSpawnInterval(2.0);      // 2 seconds between packets
+        level.setLevelDuration(120);            // 2 minutes
         
-        // Configure level parameters for testing
-        level.setWireLength(1000);
-        level.setPacketSpawnInterval(2.0); // Spawn packets every 2 seconds for easy observation
-        level.setLevelDuration(60); // 1 minute test duration
+        System.out.println("DDoS System Test Level Created:");
+        System.out.println("  Layout: START(3 ports) → DDoS(3 in, 3 out) → END(3 ports)");
+        System.out.println("  Packet Types: Square, Triangle, Hexagon");
+        System.out.println("  Test: DDoS system sends packets to incompatible ports!");
+        System.out.println("  Connect all matching ports: Square→Square, Triangle→Triangle, Hexagon→Hexagon");
         
         return level;
     }
     
-    private static NetworkSystem createSystem(GameState gameState, int x, int y, boolean active, 
-                                             String label, boolean isStart, boolean isEnd) {
-        // Create as a real system (not reference), the 'active' parameter should control initial activity
+    private static NetworkSystem createStartSystem(GameState gameState, int x, int y, String label) {
         NetworkSystem system = new NetworkSystem(new Point2D(x, y), 80, 100, false, gameState);
         system.setLabel(label);
-        system.setActive(active);
-        
-        if (isStart) {
-            system.setStartSystem(true);
-        }
-        
-        if (isEnd) {
-            system.setEndSystem(true);
-        }
-        
+        system.setActive(true);
+        system.setStartSystem(true);
         return system;
     }
     
-    private static void setupSourceSystem(NetworkSystem system) {
-        // Create mixed output ports for testing compatibility effects
-        addOutputPort(system, PortType.HEXAGON, 2);  // Compatible ports
-        addOutputPort(system, PortType.SQUARE, 1);   // Incompatible port for speed testing
+    private static NetworkSystem createDdosSystem(GameState gameState, int x, int y, String label) {
+        NetworkSystem system = new NetworkSystem(new Point2D(x, y), 80, 100, false, gameState);
+        system.setLabel(label);
+        system.setActive(false);
+        system.setDdosSystem(true);  // Set as DDoS system
+        return system;
     }
     
-    private static void setupDestinationSystem(NetworkSystem system) {
-        // Create mixed input ports to receive the packets  
-        addInputPort(system, PortType.HEXAGON, 2);   // Compatible ports
-        addInputPort(system, PortType.SQUARE, 1);    // Incompatible port for speed testing
+    private static NetworkSystem createEndSystem(GameState gameState, int x, int y, String label) {
+        NetworkSystem system = new NetworkSystem(new Point2D(x, y), 80, 100, false, gameState);
+        system.setLabel(label);
+        system.setActive(false);
+        system.setEndSystem(true);
+        return system;
+    }
+    
+    private static void setupStartSystem(NetworkSystem system) {
+        // 3 output ports - one for each packet type
+        addOutputPort(system, PortType.SQUARE, 1);
+        addOutputPort(system, PortType.TRIANGLE, 1);
+        addOutputPort(system, PortType.HEXAGON, 1);
+    }
+    
+    private static void setupDdosSystem(NetworkSystem system) {
+        // 3 input ports (one for each packet type)
+        addInputPort(system, PortType.SQUARE, 1);
+        addInputPort(system, PortType.TRIANGLE, 1);
+        addInputPort(system, PortType.HEXAGON, 1);
+        
+        // 3 output ports (one for each packet type)
+        addOutputPort(system, PortType.SQUARE, 1);
+        addOutputPort(system, PortType.TRIANGLE, 1);
+        addOutputPort(system, PortType.HEXAGON, 1);
+    }
+    
+    private static void setupEndSystem(NetworkSystem system) {
+        // 3 input ports (one for each packet type)
+        addInputPort(system, PortType.SQUARE, 1);
+        addInputPort(system, PortType.TRIANGLE, 1);
+        addInputPort(system, PortType.HEXAGON, 1);
     }
     
     private static void addInputPort(NetworkSystem system, PortType portType, int count) {
@@ -87,16 +121,18 @@ public class HexagonTestLevel {
     
     private static Port createPort(PortType portType, boolean isInput, NetworkSystem system) {
         switch (portType) {
-            case HEXAGON:
-                return new HexagonPort(null, isInput, system);
             case SQUARE:
                 return new SquarePort(null, isInput, system);
+            case TRIANGLE:
+                return new TrianglePort(null, isInput, system);
+            case HEXAGON:
+                return new HexagonPort(null, isInput, system);
             default:
                 throw new IllegalArgumentException("Unsupported port type: " + portType);
         }
     }
     
     private enum PortType {
-        HEXAGON, SQUARE
+        SQUARE, TRIANGLE, HEXAGON
     }
 } 

@@ -14,7 +14,7 @@ import javafx.scene.shape.Polygon;
 public class HexagonPacket extends Packet {
     
     // Constants for hexagon packet configuration
-    private static final int DEFAULT_SIZE = 1;
+    private static final int DEFAULT_SIZE = 2;
     private static final int DEFAULT_COIN_VALUE = 1;
     private static final double DEFAULT_SPEED = 70.0;
     private static final double COMPATIBLE_PORT_SPEED = 100.0;  // Faster on compatible ports

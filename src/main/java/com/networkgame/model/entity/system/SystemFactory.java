@@ -34,6 +34,22 @@ public class SystemFactory {
     }
     
     /**
+     * Create a spy system that can intercept and reroute packets
+     */
+    public static SpySystem createSpySystem(Point2D position, double width, double height, 
+                                           boolean isReference, GameState gameState) {
+        return new SpySystem(position, width, height, isReference, gameState);
+    }
+    
+    /**
+     * Create a DDoS system that maliciously routes packets to incompatible ports
+     */
+    public static DdosSystem createDdosSystem(Point2D position, double width, double height, 
+                                             boolean isReference, GameState gameState) {
+        return new DdosSystem(position, width, height, isReference, gameState);
+    }
+    
+    /**
      * Create a system based on its type flags
      */
     public static BaseSystem createSystem(Point2D position, double width, double height, 

@@ -53,11 +53,16 @@ public class SquarePacket extends Packet {
     
     /**
      * Sets the appropriate speed based on whether the port is compatible
-     * Square packets move at half speed through compatible ports and full speed through incompatible ports
+     * Square packets maintain constant speed regardless of port compatibility
      */
     public void adjustSpeedForPort(Port port) {
         boolean compatible = isCompatible(port);
-        currentSpeed = DEFAULT_SPEED * (compatible ? COMPATIBLE_SPEED_FACTOR : INCOMPATIBLE_SPEED_FACTOR);
+        currentSpeed = DEFAULT_SPEED; // Constant speed regardless of compatibility
         setCompatibility(compatible);
+        
+        // Apply the speed to velocity while maintaining direction
+        if (velocity.magnitude() > 0) {
+            velocity = velocity.normalize().multiply(currentSpeed);
+        }
     }
 } 

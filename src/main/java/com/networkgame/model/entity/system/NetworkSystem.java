@@ -31,10 +31,14 @@ public class NetworkSystem implements NetworkSystemProvider, NetworkSystemCallba
     // Legacy fields for backward compatibility
     private boolean isStartSystem;
     private boolean isEndSystem;
+    private boolean isSpySystem;
+    private boolean isDdosSystem;
     
     public NetworkSystem(Point2D position, double width, double height, boolean isReference, GameState gameState) {
         this.isStartSystem = false;
         this.isEndSystem = false;
+        this.isSpySystem = false;
+        this.isDdosSystem = false;
         
         // Create the appropriate system type (default to intermediate)
         this.actualSystem = SystemFactory.createIntermediateSystem(position, width, height, isReference, gameState);
@@ -60,7 +64,13 @@ public class NetworkSystem implements NetworkSystemProvider, NetworkSystemCallba
         List<Port> outputPorts = new ArrayList<>(actualSystem.getOutputPorts());
         
         // Create new system with appropriate type
-        this.actualSystem = SystemFactory.createSystem(position, width, height, isReference, gameState, isStartSystem, isEndSystem);
+        if (isSpySystem) {
+            this.actualSystem = SystemFactory.createSpySystem(position, width, height, isReference, gameState);
+        } else if (isDdosSystem) {
+            this.actualSystem = SystemFactory.createDdosSystem(position, width, height, isReference, gameState);
+        } else {
+            this.actualSystem = SystemFactory.createSystem(position, width, height, isReference, gameState, isStartSystem, isEndSystem);
+        }
         
         // Initialize the managers for the new system
         this.actualSystem.initializeManagers(this);
@@ -229,6 +239,26 @@ public class NetworkSystem implements NetworkSystemProvider, NetworkSystemCallba
     
     public void setEndSystem(boolean isEndSystem) {
         this.isEndSystem = isEndSystem;
+        // Recreate the system with the new type
+        recreateSystem();
+    }
+    
+    public boolean isSpySystem() {
+        return this.isSpySystem;
+    }
+    
+    public void setSpySystem(boolean isSpySystem) {
+        this.isSpySystem = isSpySystem;
+        // Recreate the system with the new type
+        recreateSystem();
+    }
+    
+    public boolean isDdosSystem() {
+        return this.isDdosSystem;
+    }
+    
+    public void setDdosSystem(boolean isDdosSystem) {
+        this.isDdosSystem = isDdosSystem;
         // Recreate the system with the new type
         recreateSystem();
     }

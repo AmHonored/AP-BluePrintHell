@@ -3,6 +3,7 @@ package com.networkgame.model.entity.system;
 import javafx.geometry.Point2D;
 import com.networkgame.model.state.GameState;
 import com.networkgame.model.manager.PacketManager;
+import com.networkgame.model.entity.Packet;
 
 /**
  * Represents an end system that receives packets from the network and processes them.
@@ -83,6 +84,18 @@ public class EndSystem extends BaseSystem {
             // Process any delivered packets
             packetManager.processDeliveredPacket();
         }
+    }
+    
+    @Override
+    public void receivePacket(Packet packet) {
+        System.out.println("=== END SYSTEM: Packet " + packet.getId() + " (" + packet.getType() + ") ENTERING ===");
+        System.out.println("EndSystem: Packet health: " + packet.getHealth() + ", noise level: " + packet.getNoiseLevel());
+        System.out.println("EndSystem: Is reference system: " + isReference());
+        
+        // Call the parent implementation which will handle the packet processing
+        super.receivePacket(packet);
+        
+        System.out.println("=== END SYSTEM: Packet " + packet.getId() + " processing COMPLETE ===");
     }
     
     // System-specific rendering behavior

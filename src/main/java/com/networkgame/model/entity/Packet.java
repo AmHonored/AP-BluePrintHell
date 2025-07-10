@@ -9,7 +9,7 @@ import java.util.Map;
 
 public abstract class Packet {
     public enum PacketType {
-        SQUARE(2), TRIANGLE(3), HEXAGON(1);
+        SQUARE(2), TRIANGLE(3), HEXAGON(1), PROTECTED(5);
         private final int coinValue;
         PacketType(int coinValue) { this.coinValue = coinValue; }
         public int getCoinValue() { return coinValue; }

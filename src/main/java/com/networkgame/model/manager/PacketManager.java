@@ -291,10 +291,16 @@ public class PacketManager {
      * Handle a packet arriving at an input port
      */
     public void handlePacketArrival(Packet packet, Port port) {
+        System.out.println("=== PACKET MANAGER: handlePacketArrival called for packet " + packet.getId() + " (" + packet.getType() + ") ===");
+        
         if (packet == null) {
             LOGGER.warning("Attempted to handle packet arrival with null packet");
             return;
         }
+        
+        System.out.println("PacketManager: Port: " + (port != null ? port.getType() : "null"));
+        System.out.println("PacketManager: Parent system is end system: " + parentSystem.isEndSystem());
+        System.out.println("PacketManager: Packet already counted: " + packet.hasProperty("counted"));
         
         // Only set position if port is not null
         if (port != null) {
@@ -308,14 +314,26 @@ public class PacketManager {
         
         // If this is an end system, handle it specially
         if (parentSystem.isEndSystem()) {
+            System.out.println("PacketManager: Processing end system arrival for packet " + packet.getId());
+            
             // Mark packet as having reached the end system
             packet.setReachedEndSystem(true);
 
             // Process packet only if it hasn't been counted yet
             if (!packet.hasProperty("counted")) {
+                System.out.println("PacketManager: Packet " + packet.getId() + " not yet counted - processing for coins");
+                
                 // Mark packet as counted
                 packet.setProperty("counted", true);
 
+                // Handle debugging information (only once)
+                if (packet.hasProperty("originalType")) {
+                    System.out.println("PacketManager: DDoS packet " + packet.getId() + " reached end system!");
+                    System.out.println("PacketManager:   - Original type: " + packet.getProperty("originalType", "unknown"));
+                    System.out.println("PacketManager:   - Exit port type: " + packet.getProperty("exitPortType", "unknown"));
+                    System.out.println("PacketManager:   - From incompatible port: " + packet.getProperty("fromIncompatiblePort", false));
+                }
+                
                 // Update game state
                 if (gameState != null) {
                     // Increment delivered packets counter
@@ -323,12 +341,15 @@ public class PacketManager {
                     packetStatistics.incrementVisualPacketsDelivered();
 
                     // Add coins for this packet
+                    System.out.println("PacketManager: Adding " + packet.getCoinValue() + " coins for packet " + packet.getId());
                     gameState.addCoins(packet.getCoinValue());
 
                     // Play delivery sound
                     AudioManager.getInstance().playSoundEffect(
                         AudioManager.SoundType.CONNECTION_SUCCESS);
                 }
+            } else {
+                System.out.println("PacketManager: Packet " + packet.getId() + " already counted - skipping coin processing");
             }
 
             // Clean up packet resources

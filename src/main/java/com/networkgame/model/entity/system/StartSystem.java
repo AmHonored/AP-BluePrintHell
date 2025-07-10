@@ -111,7 +111,7 @@ public class StartSystem extends BaseSystem {
     
     @Override
     public boolean isDraggable() {
-        return !isFixedPosition(); // Start systems can usually be dragged
+        return false; // Start systems are not draggable in test levels
     }
     
     // System-specific visual management behavior
