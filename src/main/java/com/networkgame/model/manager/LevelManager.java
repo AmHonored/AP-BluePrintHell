@@ -9,6 +9,7 @@ import com.networkgame.model.entity.system.NetworkSystem;
 import com.networkgame.model.level.Level1;
 import com.networkgame.model.level.Level2;
 import com.networkgame.model.level.HexagonTestLevel;
+import com.networkgame.model.level.VpnTestLevel;
 
 public class LevelManager {
     private Map<Integer, Level> levels;
@@ -17,7 +18,7 @@ public class LevelManager {
     
     public LevelManager(GameState gameState) {
         this.levels = new HashMap<>();
-        this.maxUnlockedLevel = 3; // Unlock Level 3 by default for debugging
+        this.maxUnlockedLevel = 4; // Unlock Level 4 by default for debugging
         this.gameState = gameState;
         
         // Set this LevelManager in the GameState
@@ -46,6 +47,12 @@ public class LevelManager {
         
         // Add level to levels map
         levels.put(3, level3);
+        
+        // Create level 4 using the VpnTestLevel class
+        Level level4 = VpnTestLevel.createLevel(gameState);
+        
+        // Add level to levels map
+        levels.put(4, level4);
     }
     
     public Level getLevel(int levelNumber) {

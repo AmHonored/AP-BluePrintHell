@@ -49,14 +49,32 @@ public class PortManager {
      * Position a list of ports with proper spacing and type-based adjustments
      */
     private void positionPorts(List<Port> ports, double height, Function<Double, Point2D> positionCalculator, double baseY) {
-        double spacing = height / (ports.size() + 1);
+        if (ports.isEmpty()) return;
+        
+        // Ensure minimum spacing between ports
+        double minPortSpacing = 25.0; // Minimum pixels between port centers
+        double availableHeight = height - 20; // Leave 10px margin top and bottom
+        double requiredHeight = (ports.size() - 1) * minPortSpacing;
+        
+        double spacing;
+        double startY;
+        
+        if (requiredHeight <= availableHeight) {
+            // Use equal spacing if we have enough room
+            spacing = ports.size() > 1 ? availableHeight / (ports.size() - 1) : 0;
+            startY = baseY + 10; // 10px top margin
+        } else {
+            // Use minimum spacing if ports would be too crowded
+            spacing = minPortSpacing;
+            startY = baseY + (height - requiredHeight) / 2; // Center the port group
+        }
         
         for (int i = 0; i < ports.size(); i++) {
             Port port = ports.get(i);
-            double portY = baseY + (i + 1) * spacing;
+            double portY = startY + (i * spacing);
             
-            // Adjust position based on port type
-            portY = adjustPortYPositionByType(port, portY, baseY, height, ports.size());
+            // Ensure ports stay within system bounds
+            portY = Math.max(baseY + 10, Math.min(baseY + height - 10, portY));
             
             // Set the port position
             port.setPosition(positionCalculator.apply(portY));
@@ -66,20 +84,7 @@ public class PortManager {
         }
     }
     
-    /**
-     * Adjust port Y position based on its type
-     */
-    private double adjustPortYPositionByType(Port port, double portY, double baseY, double height, int portCount) {
-        if (port.getType() == Packet.PacketType.SQUARE) {
-            // Position square ports slightly higher if possible
-            return Math.max(baseY + 10, portY);
-        } else if (port.getType() == Packet.PacketType.TRIANGLE && portCount > 1) {
-            // Position triangle ports slightly lower if there are multiple ports
-            return Math.min(baseY + height - 10, portY);
-        }
-        
-        return portY;
-    }
+
     
     /**
      * Update connection position if port is connected

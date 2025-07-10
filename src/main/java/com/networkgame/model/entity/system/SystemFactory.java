@@ -50,6 +50,14 @@ public class SystemFactory {
     }
     
     /**
+     * Create a VPN system that encrypts packets and provides security
+     */
+    public static VpnSystem createVpnSystem(Point2D position, double width, double height, 
+                                           boolean isReference, GameState gameState) {
+        return new VpnSystem(position, width, height, isReference, gameState);
+    }
+    
+    /**
      * Create a system based on its type flags
      */
     public static BaseSystem createSystem(Point2D position, double width, double height, 

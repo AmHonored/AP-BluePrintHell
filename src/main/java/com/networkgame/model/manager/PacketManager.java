@@ -274,6 +274,48 @@ public class PacketManager {
                     }
                 }
             }
+            else if (packet instanceof com.networkgame.model.entity.packettype.messenger.ProtectedPacket) {
+                // For ProtectedPackets, use their disguise movement type for routing
+                com.networkgame.model.entity.packettype.messenger.ProtectedPacket protectedPacket = 
+                    (com.networkgame.model.entity.packettype.messenger.ProtectedPacket) packet;
+                Packet.PacketType disguiseType = protectedPacket.getDisguiseMovementType();
+                
+                System.out.println("PacketManager: Routing ProtectedPacket " + packet.getId() + 
+                                 " with disguise type: " + disguiseType);
+                
+                // First try to find matching port type based on disguise
+                for (Port outputPort : parentSystem.getOutputPorts()) {
+                    if (outputPort.getType() == disguiseType && 
+                        outputPort.getConnection() != null && 
+                        outputPort.getConnection().isEmpty()) {
+                        
+                        System.out.println("PacketManager: Sending ProtectedPacket to matching " + 
+                                         disguiseType + " port");
+                        
+                        // Send packet directly through this port
+                        packetAnimator.sendPacketToConnection(packet, outputPort, outputPort.getConnection());
+                        packetSent = true;
+                        break;
+                    }
+                }
+                
+                // If no matching port found, try any available output port
+                if (!packetSent) {
+                    for (Port outputPort : parentSystem.getOutputPorts()) {
+                        if (outputPort.getConnection() != null && 
+                            outputPort.getConnection().isEmpty()) {
+                            
+                            System.out.println("PacketManager: No matching port for " + disguiseType + 
+                                             ", using fallback " + outputPort.getType() + " port");
+                            
+                            // Send packet directly through this port
+                            packetAnimator.sendPacketToConnection(packet, outputPort, outputPort.getConnection());
+                            packetSent = true;
+                            break;
+                        }
+                    }
+                }
+            }
         } else {
             // This is the Level 1 storage system with a square packet
             // Force the packet to be stored for demonstration purposes
@@ -503,6 +545,50 @@ public class PacketManager {
             // If no matching port, try any available output port
             for (Port port : parentSystem.getOutputPorts()) {
                 if (port.getConnection() != null && port.getConnection().isEmpty()) {
+                    // Send packet through this port
+                    packetAnimator.sendPacketToConnection(packet, port, port.getConnection());
+                    // Remove from storage
+                    packetStorage.getPackets().remove(packet);
+                    // Update system's visual indicator
+                    parentSystem.getVisualManager().updateCapacityVisual();
+                    return;
+                }
+            }
+        }
+        else if (packet instanceof com.networkgame.model.entity.packettype.messenger.ProtectedPacket) {
+            // For ProtectedPackets, use their disguise movement type for routing
+            com.networkgame.model.entity.packettype.messenger.ProtectedPacket protectedPacket = 
+                (com.networkgame.model.entity.packettype.messenger.ProtectedPacket) packet;
+            Packet.PacketType disguiseType = protectedPacket.getDisguiseMovementType();
+            
+            System.out.println("PacketManager: transferPacket - Routing stored ProtectedPacket " + packet.getId() + 
+                             " with disguise type: " + disguiseType);
+            
+            // First try to find matching port type based on disguise
+            for (Port port : parentSystem.getOutputPorts()) {
+                if (port.getType() == disguiseType && 
+                    port.getConnection() != null && 
+                    port.getConnection().isEmpty()) {
+                    
+                    System.out.println("PacketManager: transferPacket - Sending ProtectedPacket to matching " + 
+                                     disguiseType + " port");
+                    
+                    // Send packet through this port
+                    packetAnimator.sendPacketToConnection(packet, port, port.getConnection());
+                    // Remove from storage
+                    packetStorage.getPackets().remove(packet);
+                    // Update system's visual indicator
+                    parentSystem.getVisualManager().updateCapacityVisual();
+                    return;
+                }
+            }
+            
+            // If no matching port, try any available output port
+            for (Port port : parentSystem.getOutputPorts()) {
+                if (port.getConnection() != null && port.getConnection().isEmpty()) {
+                    System.out.println("PacketManager: transferPacket - No matching port for " + disguiseType + 
+                                     ", using fallback " + port.getType() + " port");
+                    
                     // Send packet through this port
                     packetAnimator.sendPacketToConnection(packet, port, port.getConnection());
                     // Remove from storage

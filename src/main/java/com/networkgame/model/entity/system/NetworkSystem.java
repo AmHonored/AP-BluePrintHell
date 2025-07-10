@@ -33,12 +33,14 @@ public class NetworkSystem implements NetworkSystemProvider, NetworkSystemCallba
     private boolean isEndSystem;
     private boolean isSpySystem;
     private boolean isDdosSystem;
+    private boolean isVpnSystem;
     
     public NetworkSystem(Point2D position, double width, double height, boolean isReference, GameState gameState) {
         this.isStartSystem = false;
         this.isEndSystem = false;
         this.isSpySystem = false;
         this.isDdosSystem = false;
+        this.isVpnSystem = false;
         
         // Create the appropriate system type (default to intermediate)
         this.actualSystem = SystemFactory.createIntermediateSystem(position, width, height, isReference, gameState);
@@ -68,6 +70,8 @@ public class NetworkSystem implements NetworkSystemProvider, NetworkSystemCallba
             this.actualSystem = SystemFactory.createSpySystem(position, width, height, isReference, gameState);
         } else if (isDdosSystem) {
             this.actualSystem = SystemFactory.createDdosSystem(position, width, height, isReference, gameState);
+        } else if (isVpnSystem) {
+            this.actualSystem = SystemFactory.createVpnSystem(position, width, height, isReference, gameState);
         } else {
             this.actualSystem = SystemFactory.createSystem(position, width, height, isReference, gameState, isStartSystem, isEndSystem);
         }
@@ -259,6 +263,16 @@ public class NetworkSystem implements NetworkSystemProvider, NetworkSystemCallba
     
     public void setDdosSystem(boolean isDdosSystem) {
         this.isDdosSystem = isDdosSystem;
+        // Recreate the system with the new type
+        recreateSystem();
+    }
+    
+    public boolean isVpnSystem() {
+        return this.isVpnSystem;
+    }
+    
+    public void setVpnSystem(boolean isVpnSystem) {
+        this.isVpnSystem = isVpnSystem;
         // Recreate the system with the new type
         recreateSystem();
     }

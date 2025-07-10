@@ -91,7 +91,9 @@ public class VpnSystem extends BaseSystem {
         // Check if packet speed causes VPN failure
         if (packet.getSpeed() >= HIGH_SPEED_THRESHOLD) {
             System.out.println("VPN: HIGH SPEED PACKET DETECTED! Speed " + packet.getSpeed() + " >= " + HIGH_SPEED_THRESHOLD);
-            triggerVpnFailure(packet);
+            triggerVpnFailure();
+            System.out.println("VPN: High-speed packet passes through failed system");
+            super.receivePacket(packet);
             return;
         }
         
@@ -127,23 +129,16 @@ public class VpnSystem extends BaseSystem {
     /**
      * Trigger VPN system failure due to high-speed packet
      */
-    private void triggerVpnFailure(Packet causingPacket) {
+    private void triggerVpnFailure() {
         if (!isFailed) {
             isFailed = true;
-            System.out.println("🚨 VPN SYSTEM FAILURE! Caused by high-speed packet " + causingPacket.getId() + 
-                             " (speed: " + causingPacket.getSpeed() + ")");
+            System.out.println("🚨 VPN SYSTEM FAILURE! Caused by high-speed packet");
             
             // Revert all packets this VPN has converted
             revertConvertedPackets();
             
             // Update indicator lamp to show failure
             updateIndicatorLamp();
-        }
-        
-        // The causing packet is destroyed/lost due to the failure
-        System.out.println("VPN: High-speed packet " + causingPacket.getId() + " DESTROYED by VPN failure");
-        if (gameState != null) {
-            gameState.getActivePackets().remove(causingPacket);
         }
     }
     
@@ -168,7 +163,8 @@ public class VpnSystem extends BaseSystem {
                 
                 ProtectedPacket protectedPacket = (ProtectedPacket) packet;
                 System.out.println("VPN: Reverting protected packet " + packet.getId() + 
-                                 " back to " + protectedPacket.getUnderlyingType());
+                                 " back to " + protectedPacket.getUnderlyingType() + 
+                                 " (was disguised as " + protectedPacket.getDisguiseMovementType() + ")");
                 
                 // Create new packet of original type at the same position
                 Packet revertedPacket = createPacketOfType(protectedPacket.getUnderlyingType(), packet.getPosition());
@@ -177,6 +173,30 @@ public class VpnSystem extends BaseSystem {
                     // Copy relevant properties
                     revertedPacket.setProperty("revertedFromProtected", true);
                     revertedPacket.setProperty("originalProtectedId", packet.getId());
+                    revertedPacket.setProperty("originalDisguiseType", protectedPacket.getDisguiseMovementType().toString());
+                    
+                    // Copy connection state if the packet was moving through a connection
+                    Connection currentConnection = packet.getCurrentConnection();
+                    if (currentConnection != null) {
+                        System.out.println("VPN: Reverted packet was moving through a connection - transferring state");
+                        
+                        // Copy connection and movement properties
+                        revertedPacket.setCurrentConnection(currentConnection);
+                        if (packet.hasProperty("progress")) {
+                            revertedPacket.setProperty("progress", packet.getProperty("progress"));
+                        }
+                        
+                        // Copy velocity and position
+                        double[] unitVector = packet.getUnitVector();
+                        revertedPacket.setUnitVector(unitVector[0], unitVector[1]);
+                        
+                        // Adjust speed based on compatibility with current port
+                        adjustRevertedPacketSpeed(revertedPacket, currentConnection, protectedPacket.getDisguiseMovementType());
+                        
+                        // Remove the protected packet from the connection and add the reverted one
+                        currentConnection.removePacket(packet);
+                        currentConnection.addPacket(revertedPacket);
+                    }
                     
                     // Remove the protected packet and add the reverted one
                     packetIterator.remove();
@@ -190,6 +210,53 @@ public class VpnSystem extends BaseSystem {
         
         // Clear the tracking set
         convertedPacketIds.clear();
+    }
+    
+    /**
+     * Adjust the speed of a reverted packet based on its compatibility with the current connection
+     */
+    private void adjustRevertedPacketSpeed(Packet revertedPacket, Connection connection, Packet.PacketType originalDisguiseType) {
+        Port targetPort = connection.getTargetPort();
+        Packet.PacketType revertedType = revertedPacket.getType();
+        Packet.PacketType portType = targetPort.getType();
+        
+        // Check if the reverted packet type is compatible with the target port
+        boolean wasCompatibleAsDisguise = (originalDisguiseType == portType);
+        boolean nowCompatibleAsOriginal = (revertedType == portType);
+        
+        System.out.println("VPN: Speed adjustment for reverted packet " + revertedPacket.getId() + ":");
+        System.out.println("  - Original disguise: " + originalDisguiseType + " (was compatible: " + wasCompatibleAsDisguise + ")");
+        System.out.println("  - Reverted to: " + revertedType + " (now compatible: " + nowCompatibleAsOriginal + ")");
+        System.out.println("  - Target port: " + portType);
+        
+        // Apply speed based on the reverted packet type and port compatibility
+        double newSpeed = calculateSpeedForPacketType(revertedType, nowCompatibleAsOriginal);
+        revertedPacket.setSpeed(newSpeed);
+        
+        // If compatibility changed, log the impact
+        if (wasCompatibleAsDisguise != nowCompatibleAsOriginal) {
+            if (nowCompatibleAsOriginal) {
+                System.out.println("VPN: Packet became COMPATIBLE after reversion - speed reduced to " + newSpeed);
+            } else {
+                System.out.println("VPN: Packet became INCOMPATIBLE after reversion - speed increased to " + newSpeed);
+            }
+        }
+    }
+    
+    /**
+     * Calculate the appropriate speed for a packet type based on port compatibility
+     */
+    private double calculateSpeedForPacketType(Packet.PacketType packetType, boolean compatible) {
+        switch (packetType) {
+            case SQUARE:
+                return compatible ? 50.0 : 100.0; // Slower when compatible, faster when incompatible
+            case TRIANGLE:
+                return compatible ? 80.0 : 120.0; // Triangle is generally faster
+            case HEXAGON:
+                return compatible ? 100.0 : 70.0; // Hexagon is slower when incompatible
+            default:
+                return 60.0; // Default speed
+        }
     }
     
     /**
@@ -213,8 +280,8 @@ public class VpnSystem extends BaseSystem {
      * The new protected packet will have the original packet as its underlying type.
      */
     private void convertToProtectedPacket(Packet originalPacket) {
-        // Create a new protected packet at the same position
-        ProtectedPacket protectedPacket = new ProtectedPacket(originalPacket.getPosition());
+        // Create a new protected packet at the same position with the original packet type as underlying
+        ProtectedPacket protectedPacket = new ProtectedPacket(originalPacket.getPosition(), originalPacket.getType());
         
         // Copy relevant properties from the original packet
         protectedPacket.setProperty("convertedFrom", originalPacket.getType().toString());
@@ -236,12 +303,48 @@ public class VpnSystem extends BaseSystem {
         
         System.out.println("VPN: Created protected packet " + protectedPacket.getId() + 
                          " from " + originalPacket.getType() + " packet " + originalPacket.getId() +
-                         " (underlying type: " + protectedPacket.getUnderlyingType() + ")");
+                         " (underlying type: " + protectedPacket.getUnderlyingType() + 
+                         ", disguise movement: " + protectedPacket.getDisguiseMovementType() + ")");
         
-        // Process the protected packet through the system
-        PacketManager packetManager = managerRegistry.get(PacketManager.class);
-        if (packetManager != null) {
-            packetManager.receivePacket(protectedPacket);
+        // Immediately route the protected packet to the appropriate output port based on its disguise type
+        routeProtectedPacketToOutput(protectedPacket);
+    }
+    
+    /**
+     * Route the protected packet to the appropriate output port based on its disguise movement type
+     */
+    private void routeProtectedPacketToOutput(ProtectedPacket protectedPacket) {
+        // Find the output port that matches the disguise movement type
+        Port targetPort = null;
+        for (Port outputPort : outputPorts) {
+            if (outputPort.getType() == protectedPacket.getDisguiseMovementType() && 
+                outputPort.isConnected() && 
+                outputPort.getConnection().isEmpty()) {
+                targetPort = outputPort;
+                break;
+            }
+        }
+        
+        if (targetPort != null) {
+            System.out.println("VPN: Routing protected packet " + protectedPacket.getId() + 
+                             " (disguise: " + protectedPacket.getDisguiseMovementType() + 
+                             ") to " + targetPort.getType() + " output port");
+            
+            // Set packet position at the output port
+            protectedPacket.setPosition(targetPort.getPosition());
+            
+            // Send packet directly to the connection
+            targetPort.getConnection().addPacket(protectedPacket);
+        } else {
+            System.out.println("VPN: No available output port for disguise type " + 
+                             protectedPacket.getDisguiseMovementType() + 
+                             ", storing packet temporarily");
+            
+            // Fallback: store the packet if no appropriate port is available
+            PacketManager packetManager = managerRegistry.get(PacketManager.class);
+            if (packetManager != null) {
+                packetManager.receivePacket(protectedPacket);
+            }
         }
     }
     

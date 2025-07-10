@@ -30,10 +30,13 @@ public class ProtectedPacket extends Packet {
     // Based on the format: square=2, triangle=3, hexagon=2 (total=7)
     private static final int[] TYPE_WEIGHTS = {2, 3, 2}; // Square, Triangle, Hexagon
     
-    // The hidden underlying packet type
+    // The hidden underlying packet type (what it reverts to when VPN fails)
     private final PacketType underlyingType;
     private final int underlyingSize;
     private final double underlyingSpeed;
+    
+    // The disguise movement type (how it behaves while protected)
+    private final PacketType disguiseMovementType;
     private boolean isRevealed = false;
     
     /**
@@ -43,25 +46,38 @@ public class ProtectedPacket extends Packet {
      * @param position The initial position of the packet
      */
     public ProtectedPacket(Point2D position) {
-        this(position, selectRandomUnderlyingType());
+        this(position, selectRandomUnderlyingType(), selectRandomMovementType());
     }
     
     /**
-     * Private constructor that takes the underlying type as parameter.
-     * This ensures consistency between size calculation and stored type.
+     * Creates a new ProtectedPacket with a specific underlying type.
+     * This is used by VPN systems when converting existing packets.
+     * 
+     * @param position The initial position of the packet
+     * @param underlyingType The original packet type (what it will revert to)
      */
-    private ProtectedPacket(Point2D position, PacketType underlyingType) {
+    public ProtectedPacket(Point2D position, PacketType underlyingType) {
+        this(position, underlyingType, selectRandomMovementType());
+    }
+    
+    /**
+     * Private constructor that takes the underlying type and disguise movement type.
+     * This ensures consistency between size calculation and stored types.
+     */
+    private ProtectedPacket(Point2D position, PacketType underlyingType, PacketType disguiseMovementType) {
         super(position, PacketType.PROTECTED, calculateDoubleSize(underlyingType));
         
         this.underlyingType = underlyingType;
+        this.disguiseMovementType = disguiseMovementType;
         this.underlyingSize = getUnderlyingSizeForType(underlyingType);
         this.underlyingSpeed = getUnderlyingSpeedForType(underlyingType);
-        this.currentSpeed = underlyingSpeed;
+        this.currentSpeed = getUnderlyingSpeedForType(disguiseMovementType); // Use disguise speed
         
         initializeShape(position);
         
         // Store underlying type as a property for later revelation
         setProperty("underlyingType", underlyingType);
+        setProperty("disguiseMovementType", disguiseMovementType);
         setProperty("protected", true);
         setProperty("isProtectedPacket", true);
     }
@@ -80,6 +96,22 @@ public class ProtectedPacket extends Packet {
             return PacketType.TRIANGLE;
         } else {
             return PacketType.HEXAGON;
+        }
+    }
+    
+    /**
+     * Selects a random movement type for the protected packet's disguise.
+     * This determines how the protected packet behaves while moving through the network.
+     * Uses equal probability for all three types (1/3 each).
+     */
+    private static PacketType selectRandomMovementType() {
+        int randomValue = random.nextInt(3); // 0, 1, or 2
+        
+        switch (randomValue) {
+            case 0: return PacketType.SQUARE;
+            case 1: return PacketType.TRIANGLE;
+            case 2: return PacketType.HEXAGON;
+            default: return PacketType.SQUARE; // fallback
         }
     }
     
@@ -172,19 +204,19 @@ public class ProtectedPacket extends Packet {
     
     @Override
     public boolean isCompatible(Port port) {
-        // Use the underlying packet type's compatibility
-        return port.getType() == underlyingType;
+        // Use the disguise movement type's compatibility (not the underlying type)
+        return port.getType() == disguiseMovementType;
     }
     
     /**
      * Adjusts the packet's speed based on port compatibility.
-     * Uses the underlying packet type's speed characteristics.
+     * Uses the disguise movement type's speed characteristics.
      */
     public void adjustSpeedForPort(Port port) {
         boolean compatible = isCompatible(port);
         
-        // Apply speed adjustments based on underlying packet type
-        switch (underlyingType) {
+        // Apply speed adjustments based on disguise movement type
+        switch (disguiseMovementType) {
             case SQUARE:
                 currentSpeed = 100.0 * (compatible ? 0.5 : 1.0);
                 break;
@@ -234,6 +266,13 @@ public class ProtectedPacket extends Packet {
      */
     public PacketType getUnderlyingType() {
         return underlyingType;
+    }
+    
+    /**
+     * Gets the disguise movement type (how the packet behaves while protected).
+     */
+    public PacketType getDisguiseMovementType() {
+        return disguiseMovementType;
     }
     
     /**

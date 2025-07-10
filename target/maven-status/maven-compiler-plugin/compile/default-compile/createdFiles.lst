@@ -1,5 +1,6 @@
 com\networkgame\model\entity\system\EndSystem.class
 com\networkgame\model\entity\system\IntermediateSystem.class
+com\networkgame\model\entity\system\VpnSystem$1.class
 com\networkgame\model\manager\ManagerRegistry.class
 com\networkgame\model\packet\PacketRouter.class
 com\networkgame\model\level\Level1$1.class
@@ -24,6 +25,7 @@ com\networkgame\model\entity\system\DdosSystem.class
 com\networkgame\model\manager\HUDManager.class
 com\networkgame\model\state\LevelProgressTracker.class
 com\networkgame\model\entity\system\DistributorSystem.class
+com\networkgame\model\level\VpnTestLevel$PortType.class
 com\networkgame\controller\InputController$1.class
 com\networkgame\model\system\CollisionSystem.class
 com\networkgame\model\manager\LevelManager.class
@@ -67,6 +69,7 @@ com\networkgame\view\LevelSelectScene.class
 com\networkgame\Main$User32Extra.class
 com\networkgame\model\ShopModel.class
 com\networkgame\model\entity\system\StartSystem.class
+com\networkgame\model\level\VpnTestLevel$1.class
 com\networkgame\model\state\GameState.class
 com\networkgame\controller\GameplayController$GameLoopManager.class
 com\networkgame\model\state\GameStateProvider.class
@@ -79,6 +82,7 @@ com\networkgame\controller\GameplayController$SimulationEngine.class
 com\networkgame\model\entity\packettype\messenger\HexagonPacket.class
 com\networkgame\model\manager\PortManager.class
 com\networkgame\view\UIComponentFactory.class
+com\networkgame\model\level\VpnTestLevel.class
 com\networkgame\view\SettingsScene.class
 com\networkgame\model\packet\PacketLifecycle.class
 com\networkgame\model\entity\Packet.class
@@ -86,6 +90,7 @@ com\networkgame\model\manager\VisualManager.class
 com\networkgame\model\entity\TrianglePort.class
 com\networkgame\view\SystemRenderer$CapacityLevel.class
 com\networkgame\model\level\Level1.class
+com\networkgame\model\entity\packettype\messenger\HighSpeedTrianglePacket.class
 com\networkgame\model\packet\PacketLifecycle$1.class
 com\networkgame\model\level\Level1$PortType.class
 com\networkgame\model\level\HexagonTestLevel.class

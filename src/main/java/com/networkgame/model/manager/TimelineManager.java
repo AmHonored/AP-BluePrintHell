@@ -83,6 +83,11 @@ public class TimelineManager {
             return;
         }
         
+        if (currentLevel == 4) {
+            startLevel4VpnTestPackets(interval);
+            return;
+        }
+        
         // Default packet generation for other levels
         packetGenerationTimeline = createTimeline(
             Duration.seconds(interval),
@@ -348,6 +353,68 @@ public class TimelineManager {
         packetGenerationTimeline.play();
         
         startPacketTransferTimeline();
+    }
+    
+    /**
+     * Start specialized packet generation for level 4 VPN test
+     * HIGH_SPEED systems generate high-speed triangle packets
+     * Normal START systems generate regular triangle packets
+     */
+    private void startLevel4VpnTestPackets(double interval) {
+        packetGenerationTimeline = new Timeline();
+        packetGenerationTimeline.setCycleCount(Timeline.INDEFINITE);
+        
+        // Determine packet generation strategy based on system label
+        String systemLabel = parentSystem.getLabel();
+        
+        if ("HIGH_SPEED".equals(systemLabel)) {
+            // High-speed start system: Generate high-speed triangle packets every 5 seconds
+            KeyFrame highSpeedFrame = new KeyFrame(
+                Duration.seconds(5.0),
+                event -> generateHighSpeedTrianglePacket()
+            );
+            packetGenerationTimeline.getKeyFrames().add(highSpeedFrame);
+            System.out.println("TimelineManager: Initialized HIGH_SPEED system to generate high-speed packets every 5 seconds");
+        } else if ("START".equals(systemLabel)) {
+            // Normal start system: Generate regular triangle packets every 1.5 seconds
+            KeyFrame normalFrame = new KeyFrame(
+                Duration.seconds(1.5),
+                event -> generateTrianglePacket()
+            );
+            packetGenerationTimeline.getKeyFrames().add(normalFrame);
+            System.out.println("TimelineManager: Initialized START system to generate normal triangle packets every 1.5 seconds");
+        }
+        
+        packetGenerationTimeline.play();
+        startPacketTransferTimeline();
+    }
+    
+    /**
+     * Generate a high-speed triangle packet for VPN failure testing
+     */
+    private void generateHighSpeedTrianglePacket() {
+        List<Port> trianglePorts = findAvailablePortsByType(Packet.PacketType.TRIANGLE);
+        
+        if (trianglePorts.isEmpty()) {
+            System.out.println("TimelineManager: No available triangle ports for high-speed packet generation");
+            return;
+        }
+        
+        Port outputPort = trianglePorts.get(0);
+        
+        // Create high-speed triangle packet
+        com.networkgame.model.entity.packettype.messenger.HighSpeedTrianglePacket highSpeedPacket = 
+            new com.networkgame.model.entity.packettype.messenger.HighSpeedTrianglePacket(outputPort.getPosition());
+        
+        highSpeedPacket.setProperty("isVisiblePacket", true);
+        highSpeedPacket.setProperty("creationTime", System.currentTimeMillis());
+        highSpeedPacket.setProperty("isHighSpeedTrigger", true);
+        
+        System.out.println("TimelineManager: Generated high-speed triangle packet " + highSpeedPacket.getId() + 
+                         " with speed " + highSpeedPacket.getSpeed() + " to trigger VPN failure");
+        
+        generatePacket(highSpeedPacket, outputPort);
+        parentSystem.getGameState().incrementTotalPackets();
     }
     
     /**
