@@ -555,6 +555,23 @@ public class PacketManager {
                 }
             }
         }
+        else if (packet instanceof com.networkgame.model.entity.packettype.secret.PentagonPacket) {
+            // Pentagon packets are compatible with any port, so use any available output port
+            for (Port port : parentSystem.getOutputPorts()) {
+                if (port.getConnection() != null && port.getConnection().isEmpty()) {
+                    System.out.println("PacketManager: transferPacket - Sending PentagonPacket " + packet.getId() + 
+                                     " through " + port.getType() + " port");
+                    
+                    // Send packet through this port
+                    packetAnimator.sendPacketToConnection(packet, port, port.getConnection());
+                    // Remove from storage
+                    packetStorage.getPackets().remove(packet);
+                    // Update system's visual indicator
+                    parentSystem.getVisualManager().updateCapacityVisual();
+                    return;
+                }
+            }
+        }
         else if (packet instanceof com.networkgame.model.entity.packettype.messenger.ProtectedPacket) {
             // For ProtectedPackets, use their disguise movement type for routing
             com.networkgame.model.entity.packettype.messenger.ProtectedPacket protectedPacket = 

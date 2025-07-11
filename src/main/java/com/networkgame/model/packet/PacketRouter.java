@@ -119,11 +119,17 @@ public class PacketRouter {
         
         packet.setPosition(sourcePos.add(targetPos.subtract(sourcePos).multiply(progress)));
         
-        if (totalDistance > 0) {
+        // Only set unit vector if packet doesn't have custom direction control (e.g., CirclePacket backward movement)
+        if (totalDistance > 0 && !packet.getProperty("customDirectionControl", false)) {
             packet.setUnitVector(
                 (targetPos.getX() - sourcePos.getX()) / totalDistance,
                 (targetPos.getY() - sourcePos.getY()) / totalDistance
             );
+        }
+        
+        // Special case: Call update() for packets with custom behavior (e.g., CirclePacket adaptive preservation)
+        if (packet instanceof com.networkgame.model.entity.packettype.secret.CirclePacket) {
+            packet.update(deltaTime);
         }
         
         // 🎨 DEBUG: Track DDoS packet progress

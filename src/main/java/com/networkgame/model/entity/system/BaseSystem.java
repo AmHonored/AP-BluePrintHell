@@ -65,8 +65,8 @@ public abstract class BaseSystem implements NetworkSystemProvider, NetworkSystem
      * Initialize the managers - called from NetworkSystem wrapper
      */
     public void initializeManagers(com.networkgame.model.entity.system.NetworkSystem networkSystem) {
-        // Default storage capacity
-        int storageCapacity = "Storage System".equals(this.label) ? 10 : 5;
+        // Default storage capacity - 5 packets for all systems (count-based, not size-based)
+        int storageCapacity = 5;
         List<Packet> packets = new ArrayList<>();
         
         // Initialize manager classes and register them

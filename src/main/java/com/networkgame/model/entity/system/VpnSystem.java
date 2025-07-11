@@ -111,6 +111,11 @@ public class VpnSystem extends BaseSystem {
             return;
         }
         
+        // Debug: Show packet type detection
+        System.out.println("🔍 VPN DEBUG: Packet type = " + packet.getType());
+        System.out.println("🔍 VPN DEBUG: Is PENTAGON? " + (packet.getType() == Packet.PacketType.PENTAGON));
+        System.out.println("🔍 VPN DEBUG: Packet class = " + packet.getClass().getSimpleName());
+        
         // Convert regular messenger packets to protected packets
         if (packet.getType() == Packet.PacketType.SQUARE || 
             packet.getType() == Packet.PacketType.TRIANGLE || 
@@ -118,7 +123,13 @@ public class VpnSystem extends BaseSystem {
             
             System.out.println("VPN: Converting " + packet.getType() + " packet to protected packet");
             convertToProtectedPacket(packet);
+        } 
+        // Convert Pentagon packets to Circle packets (secret enhancement)
+        else if (packet.getType() == Packet.PacketType.PENTAGON) {
+            System.out.println("🔥 VPN: PENTAGON DETECTED! Converting to Circle packet (secret enhancement)");
+            convertPentagonToCirclePacket(packet);
         } else {
+            System.out.println("⚠️ VPN: No conversion for " + packet.getType() + " - processing normally");
             // For other packet types, process normally
             super.receivePacket(packet);
         }
@@ -311,6 +322,83 @@ public class VpnSystem extends BaseSystem {
     }
     
     /**
+     * Converts a Pentagon packet to a Circle packet (secret VPN enhancement).
+     * The new Circle packet will have enhanced preservation behavior.
+     */
+    private void convertPentagonToCirclePacket(Packet originalPentagonPacket) {
+        // Create a new Circle packet at the same position
+        com.networkgame.model.entity.packettype.secret.CirclePacket circlePacket = 
+            new com.networkgame.model.entity.packettype.secret.CirclePacket(originalPentagonPacket.getPosition());
+        
+        // Copy relevant properties from the original Pentagon packet
+        circlePacket.setProperty("convertedFrom", "Pentagon");
+        circlePacket.setProperty("originalPacketId", originalPentagonPacket.getId());
+        circlePacket.setProperty("vpnEnhanced", true);
+        circlePacket.setProperty("preservationMode", true);
+        circlePacket.setProperty("gameState", gameState); // CRITICAL: Set gameState for analyzing other packets
+        circlePacket.setProperty(VPN_CONVERTED_PROPERTY, getSystemId()); // Track which VPN converted this
+        
+        // Track this packet for potential reversion (if VPN fails)
+        convertedPacketIds.add(circlePacket.getId());
+        
+        // Remove the original Pentagon packet from the game
+        if (gameState != null) {
+            gameState.getActivePackets().remove(originalPentagonPacket);
+        }
+        
+        // Add the new Circle packet to the game
+        if (gameState != null && !gameState.getActivePackets().contains(circlePacket)) {
+            gameState.addActivePacket(circlePacket);
+        }
+        
+        System.out.println("VPN: Created Circle packet " + circlePacket.getId() + 
+                         " from Pentagon packet " + originalPentagonPacket.getId() +
+                         " (enhanced preservation behavior enabled)");
+        
+        // Initialize the adaptive preservation distance based on current network traffic
+        circlePacket.initializeTargetPreservationDistance();
+        System.out.println("VPN: Initialized adaptive preservation distance for Circle packet " + circlePacket.getId());
+        
+        // Route the Circle packet to an available Square output port (Circle packets use Square ports)
+        routeCirclePacketToOutput(circlePacket);
+    }
+    
+    /**
+     * Route the Circle packet to an available Square output port (Circle packets are compatible with Square ports)
+     */
+    private void routeCirclePacketToOutput(com.networkgame.model.entity.packettype.secret.CirclePacket circlePacket) {
+        // Find an available Square output port (Circle packets use Square ports)
+        Port targetPort = null;
+        for (Port outputPort : outputPorts) {
+            if (outputPort.getType() == Packet.PacketType.SQUARE && 
+                outputPort.isConnected() && 
+                outputPort.getConnection().isEmpty()) {
+                targetPort = outputPort;
+                break;
+            }
+        }
+        
+        if (targetPort != null) {
+            System.out.println("VPN: Routing Circle packet " + circlePacket.getId() + 
+                             " to Square output port (Circle packets use Square ports)");
+            
+            // Set packet position at the output port
+            circlePacket.setPosition(targetPort.getPosition());
+            
+            // Send packet directly to the connection
+            targetPort.getConnection().addPacket(circlePacket);
+        } else {
+            System.out.println("VPN: No available Square output port for Circle packet, storing temporarily");
+            
+            // Fallback: store the packet if no appropriate port is available
+            PacketManager packetManager = managerRegistry.get(PacketManager.class);
+            if (packetManager != null) {
+                packetManager.receivePacket(circlePacket);
+            }
+        }
+    }
+    
+    /**
      * Route the protected packet to the appropriate output port based on its disguise movement type
      */
     private void routeProtectedPacketToOutput(ProtectedPacket protectedPacket) {
@@ -428,7 +516,7 @@ public class VpnSystem extends BaseSystem {
     
     @Override
     public boolean isDraggable() {
-        return !isReference;
+        return false; // VPN systems are undraggable for security
     }
     
     @Override

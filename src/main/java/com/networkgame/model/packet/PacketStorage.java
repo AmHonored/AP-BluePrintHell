@@ -37,7 +37,7 @@ public class PacketStorage {
 
     /** Get the current capacity usage of the system */
     public int getCurrentCapacityUsed() {
-        return packets.stream().mapToInt(Packet::getSize).sum();
+        return packets.size();
     }
     
     /** Check if adding this packet would exceed system capacity */
@@ -122,8 +122,8 @@ public class PacketStorage {
     
     private void logPacketStored(Packet packet) {
         System.out.println(parentSystem.getLabel() + ": Stored packet, now have " + 
-                           packets.size() + " packets with size " + packet.getSize() + 
-                           ", total capacity: " + getCurrentCapacityUsed());
+                           packets.size() + " packets (type: " + packet.getType() + 
+                           "), capacity used: " + getCurrentCapacityUsed() + "/" + storageCapacity);
     }
 
     /** Process and return the next packet, or null if no packets */

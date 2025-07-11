@@ -15,6 +15,7 @@ import com.networkgame.model.entity.packettype.messenger.SquarePacket;
 import com.networkgame.model.entity.packettype.messenger.TrianglePacket;
 import com.networkgame.model.entity.packettype.messenger.HexagonPacket;
 import com.networkgame.model.entity.packettype.messenger.ProtectedPacket;
+import com.networkgame.model.entity.packettype.secret.PentagonPacket;
 
 /**
  * Manages all timelines and animations for the network system
@@ -85,6 +86,16 @@ public class TimelineManager {
         
         if (currentLevel == 4) {
             startLevel4VpnTestPackets(interval);
+            return;
+        }
+        
+        if (currentLevel == 5) {
+            startLevel5PentagonTestPackets(interval);
+            return;
+        }
+        
+        if (currentLevel == 6) {
+            startLevel6CircleTestPackets(interval);
             return;
         }
         
@@ -177,6 +188,7 @@ public class TimelineManager {
             return new TrianglePacket(port.getPosition());
         } else if (port.getType() == Packet.PacketType.HEXAGON) {
             return new HexagonPacket(port.getPosition());
+
         }
         return null;
     }
@@ -224,6 +236,7 @@ public class TimelineManager {
             return new HexagonPacket(position);
         } else if (type == Packet.PacketType.PROTECTED) {
             return new ProtectedPacket(position);
+
         }
         return null;
     }
@@ -414,6 +427,183 @@ public class TimelineManager {
                          " with speed " + highSpeedPacket.getSpeed() + " to trigger VPN failure");
         
         generatePacket(highSpeedPacket, outputPort);
+        parentSystem.getGameState().incrementTotalPackets();
+    }
+    
+    /**
+     * Start specialized packet generation for level 5 Pentagon collision avoidance test
+     * FAST_GEN systems generate Square and Triangle packets rapidly
+     * PENTAGON_GEN systems generate Pentagon packets at a slower rate
+     */
+    private void startLevel5PentagonTestPackets(double interval) {
+        packetGenerationTimeline = new Timeline();
+        packetGenerationTimeline.setCycleCount(Timeline.INDEFINITE);
+        
+        // Determine packet generation strategy based on system label
+        String systemLabel = parentSystem.getLabel();
+        
+        if ("FAST_GEN".equals(systemLabel)) {
+            // Fast generator: Generate Square and Triangle packets extremely rapidly (every 0.15 seconds, alternating)
+            KeyFrame fastFrame = new KeyFrame(
+                Duration.seconds(0.15),
+                event -> {
+                    // Alternate between Square and Triangle packets to create massive congestion
+                    if (packetWave % 2 == 0) {
+                        generateSquarePacket();
+                    } else {
+                        generateTrianglePacket();
+                    }
+                    packetWave++;
+                }
+            );
+            packetGenerationTimeline.getKeyFrames().add(fastFrame);
+            System.out.println("TimelineManager: Initialized FAST_GEN system to generate Square/Triangle packets every 0.15 seconds (massive congestion)");
+        } else if ("PENTAGON_GEN".equals(systemLabel)) {
+            // Pentagon generator: Generate Pentagon packets at a much slower rate (every 5.0 seconds)
+            KeyFrame pentagonFrame = new KeyFrame(
+                Duration.seconds(5.0),
+                event -> generatePentagonPacket()
+            );
+            packetGenerationTimeline.getKeyFrames().add(pentagonFrame);
+            System.out.println("TimelineManager: Initialized PENTAGON_GEN system to generate Pentagon packets every 5.0 seconds (slow for collision testing)");
+        }
+        
+        packetGenerationTimeline.play();
+        startPacketTransferTimeline();
+    }
+    
+    /**
+     * Generate a Pentagon packet for testing collision avoidance
+     * Pentagon packets are compatible with any port, so use any available port
+     */
+    private void generatePentagonPacket() {
+        List<Port> availablePorts = parentSystem.getPortManager().findAvailableOutputPorts();
+        
+        if (availablePorts.isEmpty()) {
+            return;
+        }
+        
+        Port outputPort = availablePorts.get(0);
+        Packet packet = new com.networkgame.model.entity.packettype.secret.PentagonPacket(outputPort.getPosition());
+        
+        packet.setProperty("isVisiblePacket", true);
+        packet.setProperty("creationTime", System.currentTimeMillis());
+        
+        generatePacket(packet, outputPort);
+        
+        parentSystem.getGameState().incrementTotalPackets();
+    }
+    
+    /**
+     * Start specialized packet generation for level 6 Circle transformation test
+     * START systems generate different packets based on port index:
+     * - Port 0 (Square): Pentagon packets (slow rate)
+     * - Port 1 (Square): Square packets (fast rate)  
+     * - Port 2 (Triangle): Triangle packets (fast rate)
+     */
+    private void startLevel6CircleTestPackets(double interval) {
+        packetGenerationTimeline = new Timeline();
+        packetGenerationTimeline.setCycleCount(Timeline.INDEFINITE);
+        
+        // Determine packet generation strategy based on system label
+        String systemLabel = parentSystem.getLabel();
+        
+        if ("START".equals(systemLabel)) {
+            // START system: Generate different packets from different ports based on index
+            
+            // Pentagon packets from port 0 (first Square port) - slow rate (every 3 seconds)
+            KeyFrame pentagonFrame = new KeyFrame(
+                Duration.seconds(3.0),
+                event -> generateLevel6PentagonPacket()
+            );
+            
+            // Square packets from port 1 (second Square port) - fast rate (every 0.4 seconds)
+            KeyFrame squareFrame = new KeyFrame(
+                Duration.seconds(0.4),
+                event -> generateLevel6SquarePacket()
+            );
+            
+            // Triangle packets from port 2 (Triangle port) - fast rate (every 0.6 seconds)
+            KeyFrame triangleFrame = new KeyFrame(
+                Duration.seconds(0.6),
+                event -> generateLevel6TrianglePacket()
+            );
+            
+            packetGenerationTimeline.getKeyFrames().addAll(pentagonFrame, squareFrame, triangleFrame);
+            System.out.println("TimelineManager: Initialized Level 6 START system:");
+            System.out.println("  - Port 0 (Square): Pentagon packets every 3.0s");
+            System.out.println("  - Port 1 (Square): Square packets every 0.4s (FAST)");
+            System.out.println("  - Port 2 (Triangle): Triangle packets every 0.6s (FAST)");
+        }
+        
+        packetGenerationTimeline.play();
+        startPacketTransferTimeline();
+    }
+    
+    /**
+     * Generate a Pentagon packet from the first Square port (index 0) for VPN transformation
+     */
+    private void generateLevel6PentagonPacket() {
+        List<Port> squarePorts = findAvailablePortsByType(Packet.PacketType.SQUARE);
+        
+        if (squarePorts.isEmpty()) {
+            return;
+        }
+        
+        // Use the first Square port (index 0) for Pentagon packets
+        Port outputPort = squarePorts.get(0);
+        Packet packet = new com.networkgame.model.entity.packettype.secret.PentagonPacket(outputPort.getPosition());
+        
+        packet.setProperty("isVisiblePacket", true);
+        packet.setProperty("creationTime", System.currentTimeMillis());
+        packet.setProperty("level6PentagonPacket", true);
+        
+        System.out.println("TimelineManager: Generated Pentagon packet " + packet.getId() + " from port 0 (first Square port) -> VPN");
+        
+        generatePacket(packet, outputPort);
+        parentSystem.getGameState().incrementTotalPackets();
+    }
+    
+    /**
+     * Generate a Square packet from the second Square port (index 1) for direct connection
+     */
+    private void generateLevel6SquarePacket() {
+        List<Port> squarePorts = findAvailablePortsByType(Packet.PacketType.SQUARE);
+        
+        if (squarePorts.size() < 2) {
+            return;
+        }
+        
+        // Use the second Square port (index 1) for regular Square packets
+        Port outputPort = squarePorts.get(1);
+        Packet packet = new com.networkgame.model.entity.packettype.messenger.SquarePacket(outputPort.getPosition());
+        
+        packet.setProperty("isVisiblePacket", true);
+        packet.setProperty("creationTime", System.currentTimeMillis());
+        packet.setProperty("level6SquarePacket", true);
+        
+        generatePacket(packet, outputPort);
+        parentSystem.getGameState().incrementTotalPackets();
+    }
+    
+    /**
+     * Generate a Triangle packet from the Triangle port for direct connection
+     */
+    private void generateLevel6TrianglePacket() {
+        List<Port> trianglePorts = findAvailablePortsByType(Packet.PacketType.TRIANGLE);
+        
+        if (trianglePorts.isEmpty()) {
+            return;
+        }
+        
+        Port outputPort = trianglePorts.get(0);
+        Packet packet = new com.networkgame.model.entity.packettype.messenger.TrianglePacket(outputPort.getPosition());
+        
+        packet.setProperty("isVisiblePacket", true);
+        packet.setProperty("creationTime", System.currentTimeMillis());
+        packet.setProperty("level6TrianglePacket", true);
+        
+        generatePacket(packet, outputPort);
         parentSystem.getGameState().incrementTotalPackets();
     }
     
@@ -705,6 +895,7 @@ public class TimelineManager {
             ((HexagonPacket) packet).adjustSpeedForPort(outputPort);
         } else if (packet instanceof ProtectedPacket) {
             ((ProtectedPacket) packet).adjustSpeedForPort(outputPort);
+        
         }
         
         // Use consistent slow speed in level 1 for clear visibility
