@@ -4,6 +4,10 @@ import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Shape;
 import javafx.scene.effect.Glow;
+import javafx.animation.Timeline;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.util.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -245,6 +249,102 @@ public abstract class Packet {
             System.err.println("Property cast error for key: " + key);
             return defaultValue;
         }
+    }
+    
+    // Trojan functionality
+    /**
+     * Check if this packet is a trojan packet
+     */
+    public boolean isTrojan() {
+        return hasProperty("trojan") && (boolean) getProperty("trojan", false);
+    }
+    
+    /**
+     * Convert this packet to a trojan packet
+     */
+    public void convertToTrojan() {
+        setProperty("trojan", true);
+        setProperty("trojanConversionTime", System.currentTimeMillis());
+        setProperty("originalType", getType().toString());
+        
+        // Apply trojan visual effects
+        applyTrojanVisualEffects();
+        
+        System.out.println("🦠 Packet " + getId() + " (" + getType() + ") converted to TROJAN");
+    }
+    
+    /**
+     * Apply visual effects to indicate this is a trojan packet
+     */
+    private void applyTrojanVisualEffects() {
+        if (shape == null) return;
+        
+        // Add a dark red glow effect to indicate trojan status
+        shape.setEffect(new Glow(0.8));
+        
+        // Change the stroke to indicate trojan status
+        shape.setStroke(Color.DARKRED);
+        shape.setStrokeWidth(2.0);
+        
+        // Add a subtle pulsing animation effect
+        Timeline pulseTimeline = new Timeline(
+            new KeyFrame(Duration.ZERO, 
+                new KeyValue(shape.opacityProperty(), 0.7)),
+            new KeyFrame(Duration.seconds(1.0), 
+                new KeyValue(shape.opacityProperty(), 1.0)),
+            new KeyFrame(Duration.seconds(2.0), 
+                new KeyValue(shape.opacityProperty(), 0.7))
+        );
+        pulseTimeline.setCycleCount(Timeline.INDEFINITE);
+        pulseTimeline.play();
+        
+        // Store the timeline so it can be stopped later if needed
+        setProperty("trojanPulseTimeline", pulseTimeline);
+    }
+    
+    /**
+     * Remove trojan status from this packet
+     */
+    public void removeTrojanStatus() {
+        setProperty("trojan", false);
+        
+        // Remove trojan visual effects
+        if (shape != null) {
+            shape.setEffect(null);
+            shape.setStroke(null);
+            shape.setStrokeWidth(0);
+            shape.setOpacity(1.0);
+        }
+        
+        // Stop the pulse animation
+        Object timelineObj = getProperty("trojanPulseTimeline");
+        if (timelineObj instanceof Timeline) {
+            ((Timeline) timelineObj).stop();
+        }
+        
+        System.out.println("🦠 Packet " + getId() + " trojan status removed");
+    }
+    
+    /**
+     * Get the original type before trojan conversion
+     */
+    public PacketType getOriginalType() {
+        if (isTrojan() && hasProperty("originalType")) {
+            String originalTypeStr = (String) getProperty("originalType");
+            try {
+                return PacketType.valueOf(originalTypeStr);
+            } catch (IllegalArgumentException e) {
+                return getType(); // Fallback to current type
+            }
+        }
+        return getType();
+    }
+    
+    /**
+     * Get the time when this packet was converted to trojan (in milliseconds)
+     */
+    public long getTrojanConversionTime() {
+        return getProperty("trojanConversionTime", 0L);
     }
     
     // Basic getters and setters

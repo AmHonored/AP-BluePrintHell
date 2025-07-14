@@ -30,14 +30,12 @@ public class CollisionSystem {
     
     /**
      * Check for collisions between active packets
+     * DISABLED: This system conflicts with CollisionController. Use CollisionController instead.
      */
     public void checkCollisions() {
-        if (isCollisionDisabled() || airyaman) return;
-        
-        List<Packet> activePackets = gameState.getPacketManager().getActivePackets();
-        if (activePackets.size() <= 1) return;
-        
-        processPacketCollisions(activePackets);
+        // DISABLED: This collision system conflicts with CollisionController
+        // The CollisionController handles all collision detection and response
+        return;
     }
     
     private void processPacketCollisions(List<Packet> activePackets) {

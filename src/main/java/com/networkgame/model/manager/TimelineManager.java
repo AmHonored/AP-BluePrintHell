@@ -99,6 +99,11 @@ public class TimelineManager {
             return;
         }
         
+        if (currentLevel == 7) {
+            startLevel7HexagonCollisionTestPackets(interval);
+            return;
+        }
+        
         // Default packet generation for other levels
         packetGenerationTimeline = createTimeline(
             Duration.seconds(interval),
@@ -608,6 +613,41 @@ public class TimelineManager {
     }
     
     /**
+     * Start specialized packet generation for level 7 Hexagon collision test
+     * Generates Hexagon packets (slower) and Square packets (faster) to create collisions
+     * @param interval base interval for packet generation
+     */
+    private void startLevel7HexagonCollisionTestPackets(double interval) {
+        packetGenerationTimeline = new Timeline();
+        packetGenerationTimeline.setCycleCount(Timeline.INDEFINITE);
+        
+        // Determine packet generation strategy based on system label
+        String systemLabel = parentSystem.getLabel();
+        
+        if ("START".equals(systemLabel)) {
+            // Generate Hexagon packets at a faster rate (every 0.6 seconds) - increased collision chances
+            KeyFrame hexagonFrame = new KeyFrame(
+                Duration.seconds(0.6),
+                event -> generateHexagonPacket()
+            );
+            
+            // Generate Square packets at a faster rate (every 0.8 seconds) to create collisions
+            KeyFrame squareFrame = new KeyFrame(
+                Duration.seconds(0.8),
+                event -> generateSquarePacket()
+            );
+            
+            packetGenerationTimeline.getKeyFrames().addAll(hexagonFrame, squareFrame);
+            System.out.println("TimelineManager: Level 7 START system initialized:");
+            System.out.println("  - Hexagon packets every 0.6s (collision test subject) - INCREASED FREQUENCY");
+            System.out.println("  - Square packets every 0.8s (collision triggers)");
+        }
+        
+        packetGenerationTimeline.play();
+        startPacketTransferTimeline();
+    }
+    
+    /**
      * Start a specialized packet generation pattern for level 2
      * that creates opportunities for collisions
      * @param interval base interval for packet generation
@@ -859,15 +899,20 @@ public class TimelineManager {
         Connection connection = outputPort.getConnection();
         packet.setProperty("gameState", parentSystem.getGameState());
         
-        // Only store packet if ALL output wires are busy
-        if (!connection.isEmpty() && parentSystem.getPacketManager().areAllOutputWiresFull()) {
-            storePacketInSystem(packet);
-            return;
-        } else if (!connection.isEmpty()) {
-            return;
+        // Only store packet if THIS specific connection is busy
+        if (!connection.isEmpty()) {
+            // Check if all output wires are busy for storage decision
+            if (parentSystem.getPacketManager().areAllOutputWiresFull()) {
+                storePacketInSystem(packet);
+                return;
+            } else {
+                // This specific connection is busy, but not all connections are busy
+                // Don't generate the packet now, let it wait for the next attempt
+                return;
+            }
         }
         
-        // Set packet at output port position and configure it
+        // Connection is empty, so we can send the packet
         configurePacketForTransfer(packet, outputPort, connection);
         
         // Add packet to connection and game state

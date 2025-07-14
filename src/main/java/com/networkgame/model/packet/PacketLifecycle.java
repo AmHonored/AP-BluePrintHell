@@ -76,6 +76,16 @@ public class PacketLifecycle {
         if (packet == null) return false;
         
         try {
+            // Special protection for reversing hexagon packets
+            if (packet instanceof com.networkgame.model.entity.packettype.messenger.HexagonPacket) {
+                com.networkgame.model.entity.packettype.messenger.HexagonPacket hexPacket = 
+                    (com.networkgame.model.entity.packettype.messenger.HexagonPacket) packet;
+                if (hexPacket.isReversing()) {
+                    System.out.println("*** PACKET LIFECYCLE: Protecting reversing hexagon packet " + packet.getId() + " from removal ***");
+                    return false; // Don't remove reversing hexagon packets
+                }
+            }
+            
             // If not immediate removal, just return
             if (!immediate) {
                 return false; // We'll handle removal in the next animation frame

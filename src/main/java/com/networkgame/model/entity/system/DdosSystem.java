@@ -161,9 +161,23 @@ public class DdosSystem extends BaseSystem {
      * Convert packet to trojan packet
      */
     private void convertToTrojanPacket(Packet packet) {
-        // TODO: Implement trojan packet conversion when trojan packet type is available
-        // For now, just mark the packet with a property to indicate it's a trojan
-        packet.setProperty("trojan", true);
+        // Skip if packet is already a trojan
+        if (packet.isTrojan()) {
+            System.out.println("DDoS: Packet " + packet.getId() + " is already a trojan, skipping conversion");
+            return;
+        }
+        
+        // Convert the packet to trojan using the new functionality
+        packet.convertToTrojan();
+        
+        // Add additional DDoS-specific trojan properties
+        packet.setProperty("ddosInfected", true);
+        packet.setProperty("ddosInfectionTime", System.currentTimeMillis());
+        
+        System.out.println("DDoS: 🦠 Successfully converted packet " + packet.getId() + " to TROJAN");
+        System.out.println("DDoS:   - Original type: " + packet.getOriginalType());
+        System.out.println("DDoS:   - Current type: " + packet.getType());
+        System.out.println("DDoS:   - Health: " + packet.getHealth() + "/" + packet.getSize());
     }
     
     /**

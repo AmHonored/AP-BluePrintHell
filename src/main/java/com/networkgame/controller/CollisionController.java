@@ -1,6 +1,7 @@
 package com.networkgame.controller;
 
 import com.networkgame.model.entity.Packet;
+import com.networkgame.model.entity.packettype.messenger.HexagonPacket;
 import com.networkgame.model.state.GameState;
 import com.networkgame.service.audio.AudioManager;
 import javafx.animation.Animation;
@@ -14,6 +15,7 @@ import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,6 +39,8 @@ public class CollisionController {
     
     // Collision tracking to prevent duplicate handling
     private final Set<String> currentCollisions = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Map<String, Long> collisionCooldowns = new ConcurrentHashMap<>();
+    private static final long COLLISION_COOLDOWN_MS = 2000; // 2 seconds cooldown between collisions
     
     // Reusable list to avoid repeated allocations
     private final List<Packet> packetsCache = new ArrayList<>();
@@ -54,10 +58,14 @@ public class CollisionController {
             if (!isPaused) {
                 checkForCollision();
                 checkPacketsOffWire();
+            } else {
+                System.out.println("DEBUG: Collision detection paused, skipping check");
             }
         }));
         collisionTimeline.setCycleCount(Animation.INDEFINITE);
         collisionTimeline.play();
+        
+        System.out.println("DEBUG: Collision detection timeline started with " + FRAME_RATE_MS + "ms interval");
     }
     
     private void stopExistingTimeline() {
@@ -67,17 +75,27 @@ public class CollisionController {
     }
     
     private void checkForCollision() {
-        if (gameState.isAiryaman()) return;
+        if (gameState.isAiryaman()) {
+            return;
+        }
         
         // Maintain collision history and update packet cache
         if (currentCollisions.size() > MAX_COLLISION_HISTORY) {
             currentCollisions.clear();
         }
+        
+        // Clean up expired collision cooldowns
+        long currentTime = System.currentTimeMillis();
+        collisionCooldowns.entrySet().removeIf(entry -> 
+            (currentTime - entry.getValue()) > COLLISION_COOLDOWN_MS);
+        
         packetsCache.clear();
         packetsCache.addAll(gameState.getActivePackets());
         
         int packetCount = packetsCache.size();
-        if (packetCount <= 1) return;
+        if (packetCount <= 1) {
+            return;
+        }
         
         // Check all packet pairs for collision
         for (int i = 0; i < packetCount; i++) {
@@ -98,10 +116,24 @@ public class CollisionController {
                 }
             }
         }
+        
+        // Don't handle destroyed packets here - let them be handled by the normal packet lifecycle
+        // This prevents premature removal of packets that should continue their journey
     }
     
     private boolean isPacketProtected(Packet packet) {
-        return packet.isInsideSystem() || packet.hasReachedEndSystem();
+        // Standard protection
+        if (packet.isInsideSystem() || packet.hasReachedEndSystem()) {
+            return true;
+        }
+        
+        // Protect hexagon packets that are in the retry process
+        if (packet instanceof HexagonPacket && packet.hasProperty("isRetrying") && 
+            (boolean) packet.getProperty("isRetrying", false)) {
+            return true;
+        }
+        
+        return false;
     }
     
     private String createPairKey(Packet p1, Packet p2) {
@@ -113,22 +145,38 @@ public class CollisionController {
     private boolean arePacketsCloseForCollision(Point2D pos1, Point2D pos2, double size1, double size2) {
         double dx = pos1.getX() - pos2.getX();
         double dy = pos1.getY() - pos2.getY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
         double combinedSize = (size1 + size2) / 2.0;
-        return dx * dx + dy * dy <= combinedSize * combinedSize;
+        
+        // Enhanced collision detection with larger collision radius
+        double collisionRadius = Math.max(combinedSize, 25.0); // Minimum 25 pixel collision radius
+        
+        boolean isClose = distance <= collisionRadius;
+        
+        return isClose;
     }
     
     private boolean checkDetailedCollision(Packet p1, Packet p2, String pairKey) {
         Shape s1 = p1.getShape();
         Shape s2 = p2.getShape();
-        if (s1 == null || s2 == null) return false;
+        if (s1 == null || s2 == null) {
+            return false;
+        }
         
         boolean isColliding = !Shape.intersect(s1, s2).getBoundsInLocal().isEmpty();
         
-        if (isColliding && !currentCollisions.contains(pairKey)) {
+        // Check collision cooldown to prevent rapid repeated collisions
+        long currentTime = System.currentTimeMillis();
+        Long lastCollisionTime = collisionCooldowns.get(pairKey);
+        boolean inCooldown = lastCollisionTime != null && (currentTime - lastCollisionTime) < COLLISION_COOLDOWN_MS;
+        
+        if (isColliding && !currentCollisions.contains(pairKey) && !inCooldown) {
             currentCollisions.add(pairKey);
+            collisionCooldowns.put(pairKey, currentTime);
             return true;
         } else if (!isColliding) {
             currentCollisions.remove(pairKey);
+            // Don't remove from cooldowns - let them expire naturally
         }
         return false;
     }
@@ -140,29 +188,75 @@ public class CollisionController {
     }
     
     private void handleCollision(Packet p1, Packet p2, Point2D collisionPoint) {
-        System.out.println("DEBUG: Collision detected between " + p1.getType() + " and " + p2.getType() + " packets");
-        System.out.println("DEBUG: At position " + collisionPoint);
+        System.out.println("=== COLLISION DETECTED ===");
+        System.out.println("BEFORE COLLISION: " + p1.getType() + " (ID: " + p1.getId() + ", Health: " + p1.getHealth() + "/" + p1.getSize() + ") vs " + 
+                          p2.getType() + " (ID: " + p2.getId() + ", Health: " + p2.getHealth() + "/" + p2.getSize() + ")");
         
-        // Apply damage to both packets
-        p1.reduceHealth(1);
-        p2.reduceHealth(1);
+        // Check if either packet is a HexagonPacket and handle its specific behavior
+        boolean hexagonCollision = false;
         
-        // Apply deviation to both packets
-        applyDeviationToPackets(p1, p2);
+        if (p1 instanceof HexagonPacket) {
+            HexagonPacket hexagonPacket = (HexagonPacket) p1;
+            if (!hexagonPacket.isReversing()) {
+                System.out.println("*** HEXAGON COLLISION: Triggering backward movement for packet " + p1.getId() + " ***");
+                hexagonPacket.handlePacketCollision(p2);
+                hexagonCollision = true;
+                
+                // In hexagon collision, only the non-hexagon packet takes damage
+                System.out.println("*** HEXAGON COLLISION: Damaging non-hexagon packet " + p2.getId() + " ***");
+                p2.reduceHealth(1);
+                applyDeviationToSinglePacket(p2);
+            } else {
+                System.out.println("*** HEXAGON COLLISION: Packet " + p1.getId() + " already reversing - normal collision ***");
+            }
+        }
         
-        System.out.println("DEBUG: Packet health after collision - " + 
-                p1.getType() + ": " + p1.getHealth() + "/" + p1.getSize() + ", " +
-                p2.getType() + ": " + p2.getHealth() + "/" + p2.getSize());
+        if (p2 instanceof HexagonPacket && !hexagonCollision) {
+            HexagonPacket hexagonPacket = (HexagonPacket) p2;
+            if (!hexagonPacket.isReversing()) {
+                System.out.println("*** HEXAGON COLLISION: Triggering backward movement for packet " + p2.getId() + " ***");
+                hexagonPacket.handlePacketCollision(p1);
+                hexagonCollision = true;
+                
+                // In hexagon collision, only the non-hexagon packet takes damage
+                System.out.println("*** HEXAGON COLLISION: Damaging non-hexagon packet " + p1.getId() + " ***");
+                p1.reduceHealth(1);
+                applyDeviationToSinglePacket(p1);
+            } else {
+                System.out.println("*** HEXAGON COLLISION: Packet " + p2.getId() + " already reversing - normal collision ***");
+            }
+        }
+        
+        // Handle normal collision if no hexagon collision occurred
+        if (!hexagonCollision) {
+            System.out.println("*** NORMAL COLLISION: Both packets take 1 damage ***");
+            p1.reduceHealth(1);
+            p2.reduceHealth(1);
+            applyDeviationToPackets(p1, p2);
+        }
+        
+        System.out.println("AFTER COLLISION: " + p1.getType() + " " + p1.getId() + " = " + p1.getHealth() + "/" + p1.getSize() + 
+                          ", " + p2.getType() + " " + p2.getId() + " = " + p2.getHealth() + "/" + p2.getSize());
         
         AudioManager.getInstance().playSoundEffect(AudioManager.SoundType.PACKET_DAMAGE);
         
-        // Handle destruction and explosion
-        boolean p1Destroyed = checkAndDestroyPacket(p1);
-        boolean p2Destroyed = checkAndDestroyPacket(p2);
+        // Check for destruction but don't remove packets here - let them be handled by the normal packet lifecycle
+        boolean p1Destroyed = p1.isDestroyed();
+        boolean p2Destroyed = p2.isDestroyed();
+        
+        if (p1Destroyed) {
+            System.out.println("*** PACKET DESTRUCTION MARKED: " + p1.getType() + " packet " + p1.getId() + " destroyed (health: " + p1.getHealth() + "/" + p1.getSize() + ") ***");
+        }
+        if (p2Destroyed) {
+            System.out.println("*** PACKET DESTRUCTION MARKED: " + p2.getType() + " packet " + p2.getId() + " destroyed (health: " + p2.getHealth() + "/" + p2.getSize() + ") ***");
+        }
         
         if (!gameState.isAtar() && (p1Destroyed || p2Destroyed)) {
             createExplosion(collisionPoint, p1, p2);
         }
+        
+        System.out.println("=== COLLISION HANDLING COMPLETE ===");
+        System.out.println();
     }
     
     private void applyDeviationToPackets(Packet p1, Packet p2) {
@@ -174,6 +268,13 @@ public class CollisionController {
         }
     }
     
+    private void applyDeviationToSinglePacket(Packet packet) {
+        double[] unit = packet.getUnitVector();
+        double newX = unit[0] + (Math.random() - 0.5) * COLLISION_DEVIATION;
+        double newY = unit[1] + (Math.random() - 0.5) * COLLISION_DEVIATION;
+        normalizeAndSetVector(packet, newX, newY);
+    }
+    
     private void normalizeAndSetVector(Packet packet, double x, double y) {
         double magnitude = Math.sqrt(x * x + y * y);
         if (magnitude > EPSILON) {
@@ -181,18 +282,26 @@ public class CollisionController {
         }
     }
     
-    private boolean checkAndDestroyPacket(Packet packet) {
-        if (packet.isDestroyed()) {
-            System.out.println("DEBUG: " + packet.getType() + " packet destroyed by collision");
-            killPacket(packet);
-            return true;
+    private void handleDestroyedPackets() {
+        // Create a copy of the packets to avoid concurrent modification
+        List<Packet> packetsToCheck = new ArrayList<>(packetsCache);
+        
+        for (Packet packet : packetsToCheck) {
+            if (packet.isDestroyed()) {
+                System.out.println("*** PACKET DESTRUCTION: " + packet.getType() + " packet " + packet.getId() + 
+                                  " destroyed (health: " + packet.getHealth() + "/" + packet.getSize() + ") ***");
+                
+                // Only remove packets that are not in a special state (like reversing hexagon packets)
+                if (!(packet instanceof HexagonPacket && ((HexagonPacket) packet).isReversing())) {
+                    killPacket(packet);
+                } else {
+                    System.out.println("*** PACKET DESTRUCTION DEFERRED: Hexagon packet " + packet.getId() + " is reversing, deferring removal ***");
+                }
+            }
         }
-        return false;
     }
     
     private void createExplosion(Point2D center, Packet excludeP1, Packet excludeP2) {
-        System.out.println("DEBUG: Creating explosion at " + center);
-        
         for (Packet packet : packetsCache) {
             if (packet == excludeP1 || packet == excludeP2 || isPacketProtected(packet)) {
                 continue;
@@ -225,8 +334,10 @@ public class CollisionController {
         // Apply core damage if close enough
         if (distance < EXPLOSION_RADIUS * CORE_EXPLOSION_RADIUS_FACTOR) {
             packet.reduceHealth(1);
+            // Don't immediately kill packets from explosion - let normal lifecycle handle it
             if (packet.isDestroyed()) {
-                killPacket(packet);
+                System.out.println("*** EXPLOSION DAMAGE: " + packet.getType() + " packet " + packet.getId() + 
+                                  " destroyed by explosion (health: " + packet.getHealth() + "/" + packet.getSize() + ") ***");
             }
         }
     }
@@ -234,6 +345,11 @@ public class CollisionController {
     private void checkPacketsOffWire() {
         for (Packet packet : packetsCache) {
             if (isPacketProtected(packet) || packet.getCurrentConnection() == null) {
+                continue;
+            }
+            
+            // Special protection for reversing hexagon packets
+            if (packet instanceof HexagonPacket && ((HexagonPacket) packet).isReversing()) {
                 continue;
             }
             
@@ -283,25 +399,21 @@ public class CollisionController {
     }
     
     private void killPacket(Packet packet) {
-        System.out.println("DEBUG: Killing packet at " + packet.getPosition() + 
-                " (type: " + packet.getType() + ", connection: " + 
-                (packet.getCurrentConnection() != null ? "yes" : "no") + ")");
+        System.out.println("*** PACKET REMOVAL: " + packet.getType() + " " + packet.getId() + 
+                          " at " + String.format("(%.0f,%.0f)", packet.getPosition().getX(), packet.getPosition().getY()) + " ***");
         
         gameState.incrementLostPackets();
         gameState.safelyRemovePacket(packet);
         
-        System.out.println("DEBUG: Updated packet loss percentage: " + 
-                String.format("%.1f%%", gameState.getPacketLossPercentage()));
+        System.out.println("*** PACKET LOSS UPDATE: " + String.format("%.1f%%", gameState.getPacketLossPercentage()) + " ***");
     }
     
     public void pause() {
         isPaused = true;
-        System.out.println("DEBUG: Collision detection paused");
     }
     
     public void resume() {
         isPaused = false;
-        System.out.println("DEBUG: Collision detection resumed");
     }
     
     public void stop() {
@@ -310,17 +422,12 @@ public class CollisionController {
             collisionTimeline = null;
         }
         isPaused = true;
-        System.out.println("DEBUG: Collision detection stopped");
     }
     
     public void cleanup() {
         stop();
-        int collisionsCleared = currentCollisions.size();
-        int packetsCleared = packetsCache.size();
         currentCollisions.clear();
         packetsCache.clear();
-        System.out.println("DEBUG: Collision controller cleaned up - cleared " + 
-                collisionsCleared + " collisions and " + packetsCleared + " cached packets");
     }
 } 
 

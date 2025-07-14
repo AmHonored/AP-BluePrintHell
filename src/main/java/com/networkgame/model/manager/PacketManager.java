@@ -274,6 +274,34 @@ public class PacketManager {
                     }
                 }
             }
+            else if (packet instanceof com.networkgame.model.entity.packettype.messenger.HexagonPacket) {
+                // First try to find matching port type (Hexagon)
+                for (Port outputPort : parentSystem.getOutputPorts()) {
+                    if (outputPort.getType() == Packet.PacketType.HEXAGON && 
+                        outputPort.getConnection() != null && 
+                        outputPort.getConnection().isEmpty()) {
+                        
+                        // Send packet directly through this port
+                        packetAnimator.sendPacketToConnection(packet, outputPort, outputPort.getConnection());
+                        packetSent = true;
+                        break;
+                    }
+                }
+                
+                // If no matching port found, try any available output port
+                if (!packetSent) {
+                    for (Port outputPort : parentSystem.getOutputPorts()) {
+                        if (outputPort.getConnection() != null && 
+                            outputPort.getConnection().isEmpty()) {
+                            
+                            // Send packet directly through this port
+                            packetAnimator.sendPacketToConnection(packet, outputPort, outputPort.getConnection());
+                            packetSent = true;
+                            break;
+                        }
+                    }
+                }
+            }
             else if (packet instanceof com.networkgame.model.entity.packettype.messenger.ProtectedPacket) {
                 // For ProtectedPackets, use their disguise movement type for routing
                 com.networkgame.model.entity.packettype.messenger.ProtectedPacket protectedPacket = 
@@ -313,6 +341,32 @@ public class PacketManager {
                             packetSent = true;
                             break;
                         }
+                    }
+                }
+            }
+            else if (packet instanceof com.networkgame.model.entity.packettype.secret.PentagonPacket) {
+                // Pentagon packets are compatible with any port - try any available output port
+                for (Port outputPort : parentSystem.getOutputPorts()) {
+                    if (outputPort.getConnection() != null && 
+                        outputPort.getConnection().isEmpty()) {
+                        
+                        // Send packet directly through this port
+                        packetAnimator.sendPacketToConnection(packet, outputPort, outputPort.getConnection());
+                        packetSent = true;
+                        break;
+                    }
+                }
+            }
+            else if (packet instanceof com.networkgame.model.entity.packettype.secret.CirclePacket) {
+                // Circle packets are compatible with any port - try any available output port
+                for (Port outputPort : parentSystem.getOutputPorts()) {
+                    if (outputPort.getConnection() != null && 
+                        outputPort.getConnection().isEmpty()) {
+                        
+                        // Send packet directly through this port
+                        packetAnimator.sendPacketToConnection(packet, outputPort, outputPort.getConnection());
+                        packetSent = true;
+                        break;
                     }
                 }
             }

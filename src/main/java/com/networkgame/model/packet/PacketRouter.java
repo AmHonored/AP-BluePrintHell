@@ -114,17 +114,62 @@ public class PacketRouter {
         double distanceThisFrame = speed * deltaTime;
         double progressDelta = totalDistance > 0 ? distanceThisFrame / totalDistance : 0;
         
-        progress += progressDelta;
+        // Check if this is a reversing hexagon packet
+        boolean isReversingHexagon = packet instanceof com.networkgame.model.entity.packettype.messenger.HexagonPacket &&
+                                   ((com.networkgame.model.entity.packettype.messenger.HexagonPacket) packet).isReversing();
+        
+        if (isReversingHexagon) {
+            // For reversing packets, decrease progress (move backward)
+            progress -= progressDelta;
+            System.out.println("*** HEXAGON REVERSE MOVEMENT: Packet " + packet.getId() + " - progress: " + 
+                              String.format("%.3f", progress) + " (moving backward) ***");
+            
+            // If packet has reached the start (progress <= 0), remove it from wire
+            if (progress <= 0.0) {
+                System.out.println("*** HEXAGON REACHED START: Packet " + packet.getId() + " reached start system while reversing ***");
+                progress = 0.0;
+                packet.setPosition(sourcePos);
+                packetsToRemove.add(packet);
+                packet.setCurrentConnection(null);
+                
+                // Notify the hexagon packet that it has returned to source
+                com.networkgame.model.entity.packettype.messenger.HexagonPacket hexPacket = 
+                    (com.networkgame.model.entity.packettype.messenger.HexagonPacket) packet;
+                // The hexagon packet's update method will handle the return logic
+                
+                System.out.println("*** HEXAGON WIRE REMOVAL: Packet " + packet.getId() + " removed from wire, connection cleared ***");
+                
+                setAvailable(true);
+                notifyConnectionAvailable();
+                return;
+            }
+        } else {
+            // Normal forward progress
+            progress += progressDelta;
+        }
+        
         packet.setProperty("progress", progress);
         
         packet.setPosition(sourcePos.add(targetPos.subtract(sourcePos).multiply(progress)));
         
-        // Only set unit vector if packet doesn't have custom direction control (e.g., CirclePacket backward movement)
+        // Set unit vector based on movement direction
         if (totalDistance > 0 && !packet.getProperty("customDirectionControl", false)) {
-            packet.setUnitVector(
-                (targetPos.getX() - sourcePos.getX()) / totalDistance,
-                (targetPos.getY() - sourcePos.getY()) / totalDistance
-            );
+            if (isReversingHexagon) {
+                // For reversing hexagon packets, unit vector should point backward (toward source)
+                packet.setUnitVector(
+                    (sourcePos.getX() - targetPos.getX()) / totalDistance,
+                    (sourcePos.getY() - targetPos.getY()) / totalDistance
+                );
+                // Also update velocity to match the backward direction
+                Point2D backwardDirection = sourcePos.subtract(targetPos).normalize();
+                packet.setVelocity(backwardDirection.multiply(packet.getSpeed()));
+            } else {
+                // Normal forward movement
+                packet.setUnitVector(
+                    (targetPos.getX() - sourcePos.getX()) / totalDistance,
+                    (targetPos.getY() - sourcePos.getY()) / totalDistance
+                );
+            }
         }
         
         // Special case: Call update() for packets with custom behavior (e.g., CirclePacket adaptive preservation)
@@ -155,6 +200,17 @@ public class PacketRouter {
                           targetSystem.getLabel() + " via " + targetPort.getType() + " port ===");
         System.out.println("PacketRouter: Packet compatibility with port: " + (targetPort.getType() == packet.getType()));
         System.out.println("PacketRouter: Target system is end system: " + targetSystem.isEndSystem());
+        
+        // Check if this is a reversing hexagon packet
+        boolean isReversingHexagon = packet instanceof com.networkgame.model.entity.packettype.messenger.HexagonPacket &&
+                                   ((com.networkgame.model.entity.packettype.messenger.HexagonPacket) packet).isReversing();
+        
+        if (isReversingHexagon) {
+            System.out.println("PacketRouter: *** REVERSING HEXAGON PACKET DETECTED - BLOCKING SYSTEM ENTRY ***");
+            System.out.println("PacketRouter: Packet " + packet.getId() + " is reversing, not processing arrival");
+            // Don't process the packet arrival, let it continue reversing
+            return;
+        }
         
         packet.setPosition(targetPort.getPosition());
         packet.setProperty("progress", 1.0);

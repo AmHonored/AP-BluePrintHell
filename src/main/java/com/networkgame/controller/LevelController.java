@@ -42,6 +42,9 @@ public class LevelController {
         mainController.getAudioManager().switchToGameMusic();
         mainController.getPrimaryStage().setScene(gameScene.getScene());
         
+        // IMPORTANT: Reinitialize collision system for the new level
+        gameState.initializeCollisionSystem();
+        
         levelCompletionHandled = false;
         mainController.getGameplayController().startGameLoop();
     }

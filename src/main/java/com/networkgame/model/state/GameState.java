@@ -242,26 +242,41 @@ public class GameState implements GameStateProvider, GameStateCallbacks {
     
     // Collision system management
     public void initializeCollisionSystem() {
+        System.out.println("DEBUG: GameState.initializeCollisionSystem() called");
         collisionController = new com.networkgame.controller.CollisionController(this);
+        System.out.println("DEBUG: CollisionController created");
         collisionController.startCollisionDetection();
+        System.out.println("DEBUG: CollisionController.startCollisionDetection() called");
     }
 
     public void pauseCollisionSystem() {
+        System.out.println("DEBUG: GameState.pauseCollisionSystem() called");
         if (collisionController != null) {
             collisionController.pause();
+        } else {
+            System.out.println("DEBUG: collisionController is null in pauseCollisionSystem()");
         }
     }
 
     public void resumeCollisionSystem() {
+        System.out.println("DEBUG: GameState.resumeCollisionSystem() called");
         if (collisionController != null) {
             collisionController.resume();
+        } else {
+            System.out.println("DEBUG: collisionController is null in resumeCollisionSystem()");
         }
     }
 
+
+
     public void stopCollisionSystem() {
+        System.out.println("DEBUG: GameState.stopCollisionSystem() called");
         if (collisionController != null) {
             collisionController.stop();
             collisionController = null;
+            System.out.println("DEBUG: CollisionController stopped and set to null");
+        } else {
+            System.out.println("DEBUG: collisionController is null in stopCollisionSystem()");
         }
     }
     
