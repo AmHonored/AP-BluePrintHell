@@ -4,9 +4,12 @@ import javafx.geometry.Point2D;
 import model.entity.systems.System;
 import model.wire.Wire;
 import model.entity.packets.Packet;
+import java.util.Random;
 
 public abstract class Port {
     public static final double SIZE = 14;
+    private static final double CONFIDENTIAL_PACKET_CHANCE = 0.2; // 20% chance
+    private static final Random random = new Random();
 
     protected final String id;
     protected final System system;
@@ -45,6 +48,13 @@ public abstract class Port {
     }
     public boolean isConnected() {
         return wire != null;
+    }
+
+    /**
+     * Determines if this port should generate a confidential packet (20% chance)
+     */
+    public boolean shouldGenerateConfidentialPacket() {
+        return random.nextDouble() < CONFIDENTIAL_PACKET_CHANCE;
     }
 
     public abstract boolean isCompatible(Packet packet);

@@ -4,10 +4,14 @@ import model.entity.packets.Packet;
 import model.entity.packets.SquarePacket;
 import model.entity.packets.TrianglePacket;
 import model.entity.packets.HexagonPacket;
+import model.entity.packets.ProtectedPacket;
+import model.entity.packets.ConfidentialPacket;
 import view.components.packets.PacketView;
 import view.components.packets.SquarePacketView;
 import view.components.packets.TrianglePacketView;
 import view.components.packets.HexagonPacketView;
+import view.components.packets.ProtectedPacketView;
+import view.components.packets.ConfidentialPacketView;
 import javafx.scene.layout.Pane;
 import model.levels.Level;
 import java.util.HashMap;
@@ -29,7 +33,11 @@ public class PacketController {
     public void addPacket(Packet packet) {
         if (packet == null || packetViewMap.containsKey(packet) || packetLayer == null) return;
         PacketView view;
-        if (packet instanceof SquarePacket) {
+        if (packet instanceof ProtectedPacket) {
+            view = new ProtectedPacketView((ProtectedPacket) packet);
+        } else if (packet instanceof ConfidentialPacket) {
+            view = new ConfidentialPacketView((ConfidentialPacket) packet);
+        } else if (packet instanceof SquarePacket) {
             view = new SquarePacketView((SquarePacket) packet);
         } else if (packet instanceof TrianglePacket) {
             view = new TrianglePacketView((TrianglePacket) packet);

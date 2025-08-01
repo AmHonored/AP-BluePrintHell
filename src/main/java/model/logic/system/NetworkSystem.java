@@ -4,7 +4,9 @@ import model.entity.systems.System;
 import model.entity.systems.StartSystem;
 import model.entity.systems.IntermediateSystem;
 import model.entity.systems.DDosSystem;
+import model.entity.systems.SpySystem;
 import model.entity.systems.EndSystem;
+import model.entity.systems.VPNSystem;
 import model.entity.packets.Packet;
 import model.entity.ports.Port;
 import model.levels.Level;
@@ -58,6 +60,12 @@ public class NetworkSystem {
                 processIntermediateSystem((IntermediateSystem) system);
             } else if (system instanceof DDosSystem) {
                 processDDosSystem((DDosSystem) system);
+            } else if (system instanceof SpySystem) {
+                processSpySystem((SpySystem) system);
+            } else if (system instanceof VPNSystem) {
+                processVPNSystem((VPNSystem) system);
+            } else if (system instanceof model.entity.systems.AntiVirusSystem) {
+                processAntiVirusSystem((model.entity.systems.AntiVirusSystem) system);
             } else if (system instanceof EndSystem) {
                 processEndSystem((EndSystem) system);
             }
@@ -113,6 +121,28 @@ public class NetworkSystem {
     }
 
     /**
+     * Process SpySystem - move packets through with spy system logic
+     * Note: Individual spy system processing is now handled at the network level
+     * in GameController.forwardPacketsFromAnySpySystem()
+     */
+    private void processSpySystem(SpySystem spySystem) {
+        // Individual spy system processing is now handled at the network level
+        // This method is kept for compatibility but the actual logic is in
+        // SpySystemManager.forwardPacketsFromAnySpySystem()
+    }
+
+    /**
+     * Process VPNSystem - move packets through with VPN conversion logic
+     */
+    private void processVPNSystem(VPNSystem vpnSystem) {
+        // Use VPNSystemManager for packet forwarding with VPN behavior
+        manager.systems.VPNSystemManager manager = 
+            new manager.systems.VPNSystemManager(vpnSystem);
+        manager.setLevel(level);
+        manager.forwardPackets();
+    }
+
+    /**
      * Process EndSystem - collect arriving packets
      * Note: EndSystem packet delivery is now handled directly in PacketManager.deliverToDestinationSystem()
      * when packets complete their movement, so this method is simplified.
@@ -120,6 +150,16 @@ public class NetworkSystem {
     private void processEndSystem(EndSystem endSystem) {
         // EndSystem processing is now handled automatically when packets complete movement
         // No additional processing needed here since deliverToDestinationSystem handles it
+    }
+
+    /**
+     * Process AntiVirusSystem - clean trojan packets in range
+     */
+    private void processAntiVirusSystem(model.entity.systems.AntiVirusSystem antivirusSystem) {
+        // Process any trojan packets within range
+        manager.systems.AntiVirusSystemManager manager = 
+            new manager.systems.AntiVirusSystemManager(antivirusSystem);
+        manager.processActiveTrojanPackets(level.getPackets());
     }
 
     /**

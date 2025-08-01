@@ -6,11 +6,11 @@ import javafx.scene.shape.Shape;
 import model.logic.packet.PacketState;
 
 public class HexagonPacket extends Packet {
-    private static final double BASE_SPEED = 60.0;
-    private static final double MAX_SPEED = 120.0;
+    private static final double BASE_SPEED = 50.0;  // Increased to trigger VPN disable (> 75)
+    private static final double MAX_SPEED = 120.0;  // Increased proportionally
     private static final double MIN_SPEED = 20.0;
-    private static final double ACCELERATION = 30.0;
-    private static final double DECELERATION = 25.0;
+    private static final double ACCELERATION = 20.0;
+    private static final double DECELERATION = 15.0;
     
     private double currentSpeed = BASE_SPEED;
     private PacketState movementState = PacketState.FORWARD;

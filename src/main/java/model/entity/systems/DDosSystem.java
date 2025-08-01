@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
 
+
 public class DDosSystem extends System {
     private static final int MAX_STORAGE = 5;
     private static final double TROJAN_CONVERSION_PROBABILITY = 0.2; // 20% chance
@@ -23,8 +24,7 @@ public class DDosSystem extends System {
      * @param packet The packet to process
      */
     public void processPacket(Packet packet) {
-        // TODO: Check if packet is protected - protected packets are unaffected
-        
+        // Apply DDoS effects
         // Apply noise (reduce health by 1)
         packet.takeDamage(1);
         
@@ -36,6 +36,7 @@ public class DDosSystem extends System {
         // 20% chance to convert to trojan
         if (random.nextDouble() < TROJAN_CONVERSION_PROBABILITY) {
             packet.convertToTrojan();
+            java.lang.System.out.println("⚡ DDOS SYSTEM: Packet " + packet.getId() + " converted to TROJAN!");
         }
         
         // Add to storage if there's space

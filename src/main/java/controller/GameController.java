@@ -124,6 +124,9 @@ public class GameController {
         // Setup connection change callback
         wireController.setConnectionChangeCallback(() -> updateSystemIndicators());
         
+        // Setup bend point callbacks on existing wires
+        wireController.setupExistingWireBendCallbacks();
+        
         // Setup PortViews with WireController - moved to constructor
     }
 
@@ -143,6 +146,8 @@ public class GameController {
                     ((view.components.levels.Level1View) levelView).updateSystemIndicators();
                 } else if (levelView instanceof view.components.levels.Level2View) {
                     ((view.components.levels.Level2View) levelView).updateSystemIndicators();
+                } else if (levelView instanceof view.components.levels.Level4View) {
+                    ((view.components.levels.Level4View) levelView).updateSystemIndicators();
                 }
             }
         }
@@ -165,6 +170,8 @@ public class GameController {
                     ((view.components.levels.Level1View) levelView).setupStartSystemPlayButtons(this);
                 } else if (levelView instanceof view.components.levels.Level2View) {
                     ((view.components.levels.Level2View) levelView).setupStartSystemPlayButtons(this);
+                } else if (levelView instanceof view.components.levels.Level4View) {
+                    ((view.components.levels.Level4View) levelView).setupStartSystemPlayButtons(this);
                 }
             }
         }
@@ -291,7 +298,7 @@ public class GameController {
         continuousTransferTimer = new Timeline(
             new KeyFrame(Duration.millis(10), event -> {
                 if (level != null && !level.isPaused()) {
-                    // Process all intermediate and DDoS systems for packet forwarding
+                    // Process all intermediate, DDoS, AntiVirus, and spy systems for packet forwarding
                     for (model.entity.systems.System system : level.getSystems()) {
                         if (system instanceof model.entity.systems.IntermediateSystem) {
                             model.entity.systems.IntermediateSystem intermediateSystem = 
@@ -309,8 +316,23 @@ public class GameController {
                             manager.systems.DDosSystemManager manager = 
                                 new manager.systems.DDosSystemManager(ddosSystem);
                             manager.forwardPackets();
+                        } else if (system instanceof model.entity.systems.AntiVirusSystem) {
+                            model.entity.systems.AntiVirusSystem antivirusSystem = 
+                                (model.entity.systems.AntiVirusSystem) system;
+                            
+                            // Process the AntiVirus system for packet forwarding
+                            manager.systems.AntiVirusSystemManager manager = 
+                                new manager.systems.AntiVirusSystemManager(antivirusSystem);
+                            manager.forwardPackets();
+                            
+                            // Process active trojan packets in range
+                            manager.processActiveTrojanPackets(level.getPackets());
                         }
                     }
+                    
+                    // Handle spy system packet forwarding at network level
+                    // This allows packets to exit from any spy system, even those without input ports
+                    manager.systems.SpySystemManager.forwardPacketsFromAnySpySystem(level);
                 }
             })
         );

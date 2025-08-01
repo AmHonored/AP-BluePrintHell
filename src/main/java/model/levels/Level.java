@@ -129,6 +129,11 @@ public class Level {
 
     public void addSystem(System s) {
         systems.add(s);
+        
+        // Set level reference for spy systems so they can find other spy systems
+        if (s instanceof model.entity.systems.SpySystem) {
+            ((model.entity.systems.SpySystem) s).setLevel(this);
+        }
     }
 
     public List<Packet> getPackets() {

@@ -5,4 +5,7 @@ public enum SystemType {
     IntermediateSystem,
     EndSystem,
     DDosSystem,
+    SpySystem,
+    VPNSystem,
+    AntiVirusSystem,
 }

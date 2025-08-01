@@ -80,6 +80,22 @@ public class VisualManager {
             service.AudioManager.playButtonClick();
             levelManager.showLevel(3);
         });
+        levelSelectRoot.getLevel4Button().setOnAction(e -> {
+            service.AudioManager.playButtonClick();
+            levelManager.showLevel(4);
+        });
+        levelSelectRoot.getLevel5Button().setOnAction(e -> {
+            service.AudioManager.playButtonClick();
+            levelManager.showLevel(5);
+        });
+        levelSelectRoot.getLevel6Button().setOnAction(e -> {
+            service.AudioManager.playButtonClick();
+            levelManager.showLevel(6);
+        });
+        levelSelectRoot.getLevel7Button().setOnAction(e -> {
+            service.AudioManager.playButtonClick();
+            levelManager.showLevel(7);
+        });
         levelSelectRoot.getBackButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
             showMenu();

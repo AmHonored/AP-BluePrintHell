@@ -2,71 +2,91 @@ package view.menu;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.layout.StackPane;
+import javafx.geometry.Insets;
 
 /**
- * Level selection scene for Blueprint Hell. Three levels, Level 2 and 3 are unlocked for testing.
- * No business logic, just UI and event hooks.
+ * Level selection scene with scrollable level list. Shows 3 levels per frame.
  */
 public class LevelSelectScene extends StackPane {
-    private final Button level1Button;
-    private final Button level2Button;
-    private final Button level3Button;
+    private final Button[] levelButtons;
     private final Button backButton;
+    private static final int VISIBLE_LEVELS = 3;
+    private static final String[] LEVEL_NAMES = {
+        "Level 1",
+        "Level 2", 
+        "Level 3 - Hexagon Test",
+        "Level 4 - Spy System",
+        "Level 5 - VPN Test Lab",
+        "Level 6 - AntiVirus System",
+        "Level 7 - Confidential Packets"
+    };
 
     public LevelSelectScene(boolean level2Unlocked) {
+        // Title
         Text title = new Text("Select Level");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 36));
         title.getStyleClass().add("level-select-title");
 
-        level1Button = new Button("Level 1");
-        level1Button.setPrefWidth(260);
-        level1Button.getStyleClass().add("level-button");
-
-        level2Button = new Button("Level 2");
-        level2Button.setPrefWidth(260);
-        level2Button.getStyleClass().add("level-button");
-        level2Button.setDisable(!level2Unlocked);
-        if (!level2Unlocked) {
-            level2Button.setText("Level 2 (Locked)");
+        // Create level buttons
+        levelButtons = new Button[LEVEL_NAMES.length];
+        VBox levelContainer = new VBox(15);
+        levelContainer.setAlignment(Pos.CENTER);
+        
+        for (int i = 0; i < LEVEL_NAMES.length; i++) {
+            levelButtons[i] = createLevelButton(i, level2Unlocked);
+            levelContainer.getChildren().add(levelButtons[i]);
         }
 
-        level3Button = new Button("Level 3 - Hexagon Test");
-        level3Button.setPrefWidth(260);
-        level3Button.getStyleClass().add("level-button");
-        // Level 3 is unlocked by default for testing hexagon packets
+        // Scrollable area for levels
+        ScrollPane scrollPane = new ScrollPane(levelContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPrefHeight(VISIBLE_LEVELS * 60 + 30); // 3 buttons + spacing
+        scrollPane.getStyleClass().add("level-scroll-pane");
 
+        // Back button
         backButton = new Button("Back");
         backButton.setPrefWidth(140);
         backButton.getStyleClass().add("back-button");
 
-        VBox buttonBox = new VBox(20, level1Button, level2Button, level3Button, backButton);
-        buttonBox.setAlignment(Pos.CENTER);
-
-        VBox layout = new VBox(40, title, buttonBox);
+        // Layout
+        VBox layout = new VBox(30, title, scrollPane, backButton);
         layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(40));
+        
         this.getChildren().add(layout);
         this.setAlignment(Pos.CENTER);
         this.getStyleClass().add("menu-root");
     }
 
-    public Button getLevel1Button() {
-        return level1Button;
+    private Button createLevelButton(int levelIndex, boolean level2Unlocked) {
+        Button button = new Button(LEVEL_NAMES[levelIndex]);
+        button.setPrefWidth(260);
+        button.getStyleClass().add("level-button");
+        
+        // Lock logic
+        if (levelIndex == 1 && !level2Unlocked) {
+            button.setDisable(true);
+            button.setText(LEVEL_NAMES[levelIndex] + " (Locked)");
+        }
+        
+        return button;
     }
 
-    public Button getLevel2Button() {
-        return level2Button;
-    }
-
-    public Button getLevel3Button() {
-        return level3Button;
-    }
-
-    public Button getBackButton() {
-        return backButton;
-    }
+    // Getters for level buttons
+    public Button getLevel1Button() { return levelButtons[0]; }
+    public Button getLevel2Button() { return levelButtons[1]; }
+    public Button getLevel3Button() { return levelButtons[2]; }
+    public Button getLevel4Button() { return levelButtons[3]; }
+    public Button getLevel5Button() { return levelButtons[4]; }
+    public Button getLevel6Button() { return levelButtons[5]; }
+    public Button getLevel7Button() { return levelButtons[6]; }
+    public Button getBackButton() { return backButton; }
 }

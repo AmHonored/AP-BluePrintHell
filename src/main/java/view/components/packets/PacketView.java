@@ -3,6 +3,7 @@ package view.components.packets;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Shape;
 import model.entity.packets.Packet;
+import model.entity.packets.ConfidentialPacket;
 
 public abstract class PacketView extends StackPane {
     protected final Packet packet;
@@ -39,6 +40,8 @@ public abstract class PacketView extends StackPane {
                 yOffset = 8.0; // Half of 16 (triangle packet visual size)
             } else if (packet instanceof model.entity.packets.HexagonPacket) {
                 yOffset = 8.0; // Half of 16 (hexagon packet visual size)
+            } else if (packet instanceof ConfidentialPacket) {
+                yOffset = 8.0; // Half of 16 (confidential pentagon visual size)
             }
             
             centerY -= yOffset;

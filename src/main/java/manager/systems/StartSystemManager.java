@@ -78,6 +78,17 @@ public class StartSystemManager {
             manager.systems.DDosSystemManager manager = 
                 new manager.systems.DDosSystemManager((model.entity.systems.DDosSystem) destSystem);
             manager.receivePacket(packet);
+        } else if (destSystem instanceof model.entity.systems.SpySystem) {
+            // Find the appropriate manager and deliver
+            manager.systems.SpySystemManager manager = 
+                new manager.systems.SpySystemManager((model.entity.systems.SpySystem) destSystem);
+            manager.receivePacket(packet);
+        } else if (destSystem instanceof model.entity.systems.VPNSystem) {
+            // Find the appropriate manager and deliver
+            manager.systems.VPNSystemManager manager = 
+                new manager.systems.VPNSystemManager((model.entity.systems.VPNSystem) destSystem);
+            manager.setLevel(level);
+            manager.receivePacket(packet);
         } else if (destSystem instanceof model.entity.systems.EndSystem) {
             manager.systems.EndSystemManager manager = 
                 new manager.systems.EndSystemManager((model.entity.systems.EndSystem) destSystem, level);

@@ -4,10 +4,18 @@ import model.levels.Level;
 import model.levels.Level1;
 import model.levels.Level2;
 import model.levels.Level3;
+import model.levels.Level4;
+import model.levels.Level5;
+import model.levels.Level6;
+import model.levels.Level7;
 import view.components.levels.LevelView;
 import view.components.levels.Level1View;
 import view.components.levels.Level2View;
 import view.components.levels.Level3View;
+import view.components.levels.Level4View;
+import view.components.levels.Level5View;
+import view.components.levels.Level6View;
+import view.components.levels.Level7View;
 import controller.GameController;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -56,6 +64,14 @@ public class LevelManager {
                 return new Level2();
             case 3:
                 return new Level3();
+            case 4:
+                return new Level4();
+            case 5:
+                return new Level5();
+            case 6:
+                return new Level6();
+            case 7:
+                return new Level7();
             default:
                 throw new IllegalArgumentException("Unknown level number: " + levelNumber);
         }
@@ -75,6 +91,14 @@ public class LevelManager {
                 return new Level2View(level, visualManager);
             case 3:
                 return new Level3View(level, visualManager);
+            case 4:
+                return new Level4View(level, visualManager);
+            case 5:
+                return new Level5View(level, visualManager);
+            case 6:
+                return new Level6View(level, visualManager);
+            case 7:
+                return new Level7View(level, visualManager);
             default:
                 throw new IllegalArgumentException("Unknown level number: " + levelNumber);
         }
@@ -96,6 +120,10 @@ public class LevelManager {
             showLevel(2);
         } else if (currentLevel instanceof Level3) {
             showLevel(3);
+        } else if (currentLevel instanceof Level4) {
+            showLevel(4);
+        } else if (currentLevel instanceof Level5) {
+            showLevel(5);
         }
     }
 
@@ -114,8 +142,10 @@ public class LevelManager {
         } else if (currentLevel instanceof Level2) {
             unlockLevel2();
             showLevel(3);
+        } else if (currentLevel instanceof Level3) {
+            showLevel(4);
         } else {
-            // Level 2 completed, go back to menu
+            // Level 4 completed, go back to menu
             visualManager.showMenu();
         }
     }

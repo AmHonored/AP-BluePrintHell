@@ -3,12 +3,14 @@ package manager.packets;
 import model.entity.ports.Port;
 import model.entity.packets.Packet;
 import model.entity.packets.HexagonPacket;
+import model.entity.packets.ConfidentialPacket;
 import model.wire.Wire;
-import model.entity.systems.System;
 import javafx.geometry.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
 import model.levels.Level;
 import controller.PacketController;
 
@@ -16,6 +18,9 @@ public class PacketManager {
     private static final List<Packet> movingPackets = new ArrayList<>();
     private static Level level;
     private static PacketController packetController;
+    
+    // Track confidential packet managers for special movement handling
+    private static final Map<Packet, ConfidentialPacketManager> confidentialManagers = new HashMap<>();
 
     public static void setLevel(Level lvl) {
         level = lvl;
@@ -66,6 +71,13 @@ public class PacketManager {
             hexPacket.setTotalPathLength(wire.getLength());
             hexPacket.setDistanceTraveled(0.0);
             java.lang.System.out.println("🚀 HEXAGON PACKET MOVEMENT STARTED: " + packet.getId() + " on wire of length " + String.format("%.1f", wire.getLength()));
+        }
+        
+        // Special initialization for ConfidentialPacket
+        if (packet instanceof ConfidentialPacket) {
+            ConfidentialPacketManager confidentialManager = new ConfidentialPacketManager(packet, wire);
+            confidentialManagers.put(packet, confidentialManager);
+            java.lang.System.out.println("🔒 CONFIDENTIAL PACKET MOVEMENT STARTED: " + packet.getId() + " (" + packet.getType() + ") on wire of length " + String.format("%.1f", wire.getLength()));
         }
         
         if (packet instanceof model.entity.packets.TrianglePacket && !isCompatible) {
@@ -148,21 +160,37 @@ public class PacketManager {
                                            ", Progress: " + String.format("%.2f", progress) + ", Position: (" + 
                                            String.format("%.1f", newPosition.getX()) + ", " + String.format("%.1f", newPosition.getY()) + ")");
             }
+        } else if (packet instanceof ConfidentialPacket) {
+            // Special handling for ConfidentialPacket using custom movement logic
+            ConfidentialPacketManager confidentialManager = confidentialManagers.get(packet);
+            if (confidentialManager != null) {
+                confidentialManager.updateMovement(deltaTimeSeconds);
+            } else {
+                // Fallback to standard movement if manager not found
+                standardPacketMovement(packet, deltaTimeSeconds, wireLength);
+            }
         } else {
             // Standard progress-based movement for other packets
-            double speed = packet.getSpeed();
-            double distanceToMove = speed * deltaTimeSeconds;
-            double progressIncrement = distanceToMove / wireLength;
-            double newProgress = packet.getMovementProgress() + progressIncrement;
-            if (newProgress > 1.0) {
-                newProgress = 1.0;
-            }
-            packet.setMovementProgress(newProgress);
-            Point2D newPosition = wire.getPositionAtProgress(newProgress);
-            
-            // For standard packets, also don't add deflection during normal movement
-            packet.setPosition(new Point2D(newPosition.getX(), newPosition.getY()));
+            standardPacketMovement(packet, deltaTimeSeconds, wireLength);
         }
+    }
+    
+    /**
+     * Standard movement logic for regular packets
+     */
+    private static void standardPacketMovement(Packet packet, double deltaTimeSeconds, double wireLength) {
+        double speed = packet.getSpeed();
+        double distanceToMove = speed * deltaTimeSeconds;
+        double progressIncrement = distanceToMove / wireLength;
+        double newProgress = packet.getMovementProgress() + progressIncrement;
+        if (newProgress > 1.0) {
+            newProgress = 1.0;
+        }
+        packet.setMovementProgress(newProgress);
+        Point2D newPosition = packet.getCurrentWire().getPositionAtProgress(newProgress);
+        
+        // For standard packets, also don't add deflection during normal movement
+        packet.setPosition(new Point2D(newPosition.getX(), newPosition.getY()));
     }
     
     private static void completeMovement(Packet packet) {
@@ -225,6 +253,61 @@ public class PacketManager {
                 packetController.hidePacket(packet);
             }
             
+        } else if (destinationSystem instanceof model.entity.systems.SpySystem) {
+            model.entity.systems.SpySystem spySystem = (model.entity.systems.SpySystem) destinationSystem;
+            
+            manager.systems.SpySystemManager manager = 
+                new manager.systems.SpySystemManager(spySystem);
+            manager.receivePacket(packet);
+            
+            // CRITICAL FIX: Update packet visual position to be inside the system and hide it
+            // since it's now in internal storage
+            
+            // Move packet to system center position
+            packet.setPosition(spySystem.getPosition());
+            
+            // Hide the packet visually since it's in internal storage
+            if (packetController != null) {
+                packetController.hidePacket(packet);
+            }
+            
+        } else if (destinationSystem instanceof model.entity.systems.VPNSystem) {
+            model.entity.systems.VPNSystem vpnSystem = (model.entity.systems.VPNSystem) destinationSystem;
+            
+            manager.systems.VPNSystemManager manager = 
+                new manager.systems.VPNSystemManager(vpnSystem);
+            manager.setLevel(level);  // Required for global VPN failure handling
+            manager.receivePacket(packet);
+            
+            // CRITICAL FIX: Update packet visual position to be inside the system and hide it
+            // since it's now in internal storage
+            
+            // Move packet to system center position
+            packet.setPosition(vpnSystem.getPosition());
+            
+            // Hide the packet visually since it's in internal storage
+            if (packetController != null) {
+                packetController.hidePacket(packet);
+            }
+            
+        } else if (destinationSystem instanceof model.entity.systems.AntiVirusSystem) {
+            model.entity.systems.AntiVirusSystem antivirusSystem = (model.entity.systems.AntiVirusSystem) destinationSystem;
+            
+            manager.systems.AntiVirusSystemManager manager = 
+                new manager.systems.AntiVirusSystemManager(antivirusSystem);
+            manager.receivePacket(packet);
+            
+            // CRITICAL FIX: Update packet visual position to be inside the system and hide it
+            // since it's now in internal storage
+            
+            // Move packet to system center position
+            packet.setPosition(antivirusSystem.getPosition());
+            
+            // Hide the packet visually since it's in internal storage
+            if (packetController != null) {
+                packetController.hidePacket(packet);
+            }
+            
         } else if (destinationSystem instanceof model.entity.systems.EndSystem) {
             model.entity.systems.EndSystem endSystem = (model.entity.systems.EndSystem) destinationSystem;
             endSystem.claimPacket(packet, level);
@@ -237,6 +320,15 @@ public class PacketManager {
     
     public static void removePacket(Packet packet) {
         movingPackets.remove(packet);
+        
+        // Clean up confidential packet manager if exists
+        if (packet instanceof ConfidentialPacket) {
+            ConfidentialPacketManager manager = confidentialManagers.remove(packet);
+            if (manager != null) {
+                manager.cleanup();
+            }
+        }
+        
         if (packetController != null) {
             packetController.removePacket(packet);
         }
@@ -261,5 +353,23 @@ public class PacketManager {
     
     public static boolean hasMovingPackets() {
         return !movingPackets.isEmpty();
+    }
+    
+    /**
+     * Convert a protected packet to its original type and update visuals
+     */
+    public static void convertProtectedPacket(Packet oldPacket, Packet newPacket) {
+        // Replace in moving packets list
+        if (movingPackets.contains(oldPacket)) {
+            movingPackets.remove(oldPacket);
+            movingPackets.add(newPacket);
+            
+            // Update packet controller for visual changes
+            if (packetController != null) {
+                packetController.removePacket(oldPacket);
+                packetController.addPacket(newPacket);
+                java.lang.System.out.println("🔄 PACKET VISUAL CONVERSION: " + oldPacket.getId() + " visual updated from PROTECTED to " + newPacket.getType());
+            }
+        }
     }
 }

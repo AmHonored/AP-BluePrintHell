@@ -85,6 +85,36 @@ public class ConnectionManager {
         return true;
     }
 
+    /**
+     * Recalculate total used wire length by summing current lengths of all wires
+     * Call this when wire lengths change due to bend point movement
+     */
+    public void recalculateWireLengths() {
+        double oldUsedLength = usedWireLength;
+        
+        // Recalculate total used wire length
+        double newUsedLength = 0.0;
+        for (Wire wire : wires) {
+            newUsedLength += getWireLength(wire);
+        }
+        
+        double difference = newUsedLength - oldUsedLength;
+        usedWireLength = newUsedLength;
+        
+        // Update level state to reflect the change
+        if (difference > 0) {
+            // Wire length increased - subtract from remaining
+            level.subtractWireLength(difference);
+        } else if (difference < 0) {
+            // Wire length decreased - add to remaining
+            level.addWireLength(-difference);
+        }
+        
+        System.out.println("DEBUG: ConnectionManager.recalculateWireLengths() - Wire length change: " + String.format("%.1f", difference));
+        System.out.println("DEBUG: ConnectionManager.recalculateWireLengths() - Used wire now: " + String.format("%.1f", usedWireLength) + "/" + maxWireLength);
+        System.out.println("DEBUG: ConnectionManager.recalculateWireLengths() - Level remaining wire: " + String.format("%.1f", level.getRemainingWireLength()));
+    }
+
     private double getWireLength(Wire wire) {
         // Calculate actual wire length based on distance between ports
         return wire.getLength();

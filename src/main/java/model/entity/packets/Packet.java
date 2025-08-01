@@ -75,6 +75,10 @@ public abstract class Packet {
         return currentHealth;
     }
     
+    public void setCurrentHealth(int currentHealth) {
+        this.currentHealth = Math.max(0, currentHealth);
+    }
+    
     public void applyNoise() {
         if (currentHealth > 0) {
             currentHealth--;
