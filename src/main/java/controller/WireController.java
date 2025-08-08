@@ -234,8 +234,7 @@ public class WireController {
         // Check if ports are from the same system
         if (src.getSystem() == dst.getSystem()) return false;
         
-        // Check if ports are of the same packet type
-        if (src.getClass() != dst.getClass()) return false;
+        // Allow any port types to connect regardless of packet shape/type
         
         return true;
     }

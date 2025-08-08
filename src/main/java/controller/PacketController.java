@@ -5,6 +5,7 @@ import model.entity.packets.SquarePacket;
 import model.entity.packets.TrianglePacket;
 import model.entity.packets.HexagonPacket;
 import model.entity.packets.ProtectedPacket;
+import model.entity.packets.MassivePacket;
 import model.entity.packets.ConfidentialPacket;
 import view.components.packets.PacketView;
 import view.components.packets.SquarePacketView;
@@ -12,6 +13,7 @@ import view.components.packets.TrianglePacketView;
 import view.components.packets.HexagonPacketView;
 import view.components.packets.ProtectedPacketView;
 import view.components.packets.ConfidentialPacketView;
+import view.components.packets.MassivePacketView;
 import javafx.scene.layout.Pane;
 import model.levels.Level;
 import java.util.HashMap;
@@ -37,6 +39,8 @@ public class PacketController {
             view = new ProtectedPacketView((ProtectedPacket) packet);
         } else if (packet instanceof ConfidentialPacket) {
             view = new ConfidentialPacketView((ConfidentialPacket) packet);
+        } else if (packet instanceof MassivePacket) {
+            view = new MassivePacketView((MassivePacket) packet);
         } else if (packet instanceof SquarePacket) {
             view = new SquarePacketView((SquarePacket) packet);
         } else if (packet instanceof TrianglePacket) {

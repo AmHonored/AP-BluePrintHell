@@ -9,6 +9,7 @@ import java.util.Random;
 public abstract class Port {
     public static final double SIZE = 14;
     private static final double CONFIDENTIAL_PACKET_CHANCE = 0.2; // 20% chance
+    private static final double MASSIVE_PACKET_CHANCE = 0.1; // 10% chance
     private static final Random random = new Random();
 
     protected final String id;
@@ -55,6 +56,13 @@ public abstract class Port {
      */
     public boolean shouldGenerateConfidentialPacket() {
         return random.nextDouble() < CONFIDENTIAL_PACKET_CHANCE;
+    }
+
+    /**
+     * Determines if this port should generate a massive packet (10% chance)
+     */
+    public static boolean shouldGenerateMassivePacket() {
+        return random.nextDouble() < MASSIVE_PACKET_CHANCE;
     }
 
     public abstract boolean isCompatible(Packet packet);

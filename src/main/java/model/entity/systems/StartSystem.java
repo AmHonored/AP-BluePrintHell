@@ -6,6 +6,7 @@ import model.entity.packets.SquarePacket;
 import model.entity.packets.TrianglePacket;
 import model.entity.packets.HexagonPacket;
 import model.entity.packets.ConfidentialPacket;
+import model.entity.packets.MassivePacket;
 import model.entity.packets.Packet;
 
 public class StartSystem extends System {
@@ -25,6 +26,14 @@ public class StartSystem extends System {
         // Check if this port should generate a confidential packet (20% chance)
         if (port.shouldGenerateConfidentialPacket()) {
             return new ConfidentialPacket.Type1("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
+        }
+
+        // Massive packets: each type has 10% chance (total massive chance 20%)
+        double r = Math.random();
+        if (r < 0.10) {
+            return new MassivePacket.Type1("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
+        } else if (r < 0.20) {
+            return new MassivePacket.Type2("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
         }
         
         // Determine packet type by port class or property

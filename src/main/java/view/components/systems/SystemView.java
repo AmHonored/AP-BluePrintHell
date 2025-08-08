@@ -143,6 +143,14 @@ public abstract class SystemView extends StackPane {
             indicatorLamp.getStyleClass().add("indicator-lamp-off");
         }
     }
+
+    /**
+     * Visually mark the system as degraded (e.g., a connected wire disabled) by setting indicator to yellow.
+     */
+    public void setIndicatorWarning() {
+        indicatorLamp.getStyleClass().clear();
+        indicatorLamp.getStyleClass().add("indicator-lamp-warning");
+    }
     
     public void updateReady(boolean ready) {
         system.setReady(ready);

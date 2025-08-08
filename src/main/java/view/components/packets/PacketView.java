@@ -42,6 +42,8 @@ public abstract class PacketView extends StackPane {
                 yOffset = 8.0; // Half of 16 (hexagon packet visual size)
             } else if (packet instanceof ConfidentialPacket) {
                 yOffset = 8.0; // Half of 16 (confidential pentagon visual size)
+            } else if (packet instanceof model.entity.packets.MassivePacket) {
+                yOffset = 8.0; // Center circle with radius 8
             }
             
             centerY -= yOffset;

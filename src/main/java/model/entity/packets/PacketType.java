@@ -7,4 +7,6 @@ public enum PacketType {
     PROTECTED,
     CONFIDENTIAL_TYPE1,
     CONFIDENTIAL_TYPE2,
+    MASSIVE_TYPE1,
+    MASSIVE_TYPE2,
 }

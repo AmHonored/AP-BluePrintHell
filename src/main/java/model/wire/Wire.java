@@ -11,6 +11,8 @@ public class Wire {
     private final Port dest;
     private boolean active = true;
     private final List<BendPoint> bendPoints = new ArrayList<>();
+    // Tracks how many massive packets have completed traversal on this wire
+    private int massivePacketRunCount = 0;
     
     public static class BendPoint {
         private Point2D position;
@@ -81,6 +83,34 @@ public class Wire {
 
     public void setAvailable(boolean available) {
         this.active = available;
+    }
+
+    /**
+     * Increment the number of completed massive packet runs on this wire.
+     */
+    public void incrementMassivePacketRunCount() {
+        massivePacketRunCount++;
+    }
+
+    public int getMassivePacketRunCount() {
+        return massivePacketRunCount;
+    }
+
+    public boolean hasReachedMassiveRunLimit() {
+        return massivePacketRunCount >= 3;
+    }
+
+    /**
+     * Detach the wire from its ports and deactivate it.
+     */
+    public void detachAndDeactivate() {
+        if (source != null) {
+            source.setWire(null);
+        }
+        if (dest != null) {
+            dest.setWire(null);
+        }
+        this.active = false;
     }
 
     public double getLength() {

@@ -10,10 +10,13 @@ import javafx.scene.text.Text;
 import javafx.geometry.Point2D;
 
 import model.wire.Wire;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 import java.util.List;
 
 public class WireView extends Group {
+    private static final Map<Wire, WireView> REGISTRY = new ConcurrentHashMap<>();
     private final Wire wireModel;
     private final List<QuadCurve> curves = new ArrayList<>();
     private final List<Circle> bendPointIndicators = new ArrayList<>();
@@ -47,6 +50,7 @@ public class WireView extends Group {
 
     public WireView(Wire wireModel) {
         this.wireModel = wireModel;
+        REGISTRY.put(wireModel, this);
         this.wireLabel = new Text();
         this.outOfWireWarning = new Text("Out of wire!");
         
@@ -89,6 +93,20 @@ public class WireView extends Group {
         this.setOnMouseEntered(event -> {
             requestFocus();
         });
+    }
+
+    /**
+     * Mark a wire as disabled in the UI by changing its color to red.
+     */
+    public static void markDisabled(Wire wire) {
+        WireView view = REGISTRY.get(wire);
+        if (view == null) return;
+        for (QuadCurve curve : view.curves) {
+            curve.setStroke(Color.RED);
+            curve.setStrokeWidth(4);
+            curve.setEffect(null);
+        }
+        view.outOfWireWarning.setVisible(false);
     }
 
     public void createWireShape() {
