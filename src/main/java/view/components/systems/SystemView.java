@@ -5,7 +5,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Circle;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
 import javafx.geometry.Pos;
 import model.entity.systems.System;
 import model.entity.ports.Port;
@@ -77,6 +76,11 @@ public abstract class SystemView extends StackPane {
         
         // Apply initial styling
         applySystemStyling();
+
+        // If this is a distributor, tag class for CSS if desired
+        if (system instanceof model.entity.systems.DistributorSystem) {
+            systemRectangle.getStyleClass().add("system-distributor");
+        }
     }
     
     /**

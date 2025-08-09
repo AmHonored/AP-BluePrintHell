@@ -574,6 +574,32 @@ public class WireView extends Group {
         return curves.isEmpty() ? null : curves.get(0);
     }
 
+    /**
+     * Get the curve that is closest to the given local point; used for mark placement hit-testing.
+     */
+    public javafx.scene.shape.QuadCurve getClosestCurveToLocalPoint(Point2D local) {
+        if (curves.isEmpty()) return null;
+        javafx.scene.shape.QuadCurve best = curves.get(0);
+        double bestDist = distanceToCurve(best, local);
+        for (javafx.scene.shape.QuadCurve c : curves) {
+            double d = distanceToCurve(c, local);
+            if (d < bestDist) { bestDist = d; best = c; }
+        }
+        return best;
+    }
+
+    private double distanceToCurve(javafx.scene.shape.QuadCurve c, Point2D p) {
+        double min = Double.MAX_VALUE;
+        for (int i = 0; i <= 100; i++) {
+            double t = i / 100.0;
+            double x = (1-t)*(1-t)*c.getStartX() + 2*(1-t)*t*c.getControlX() + t*t*c.getEndX();
+            double y = (1-t)*(1-t)*c.getStartY() + 2*(1-t)*t*c.getControlY() + t*t*c.getEndY();
+            double d = p.distance(x, y);
+            if (d < min) min = d;
+        }
+        return min;
+    }
+
     public Text getWireLabel() {
         return wireLabel;
     }

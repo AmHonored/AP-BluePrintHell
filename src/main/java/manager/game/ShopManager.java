@@ -4,6 +4,7 @@ import model.logic.Shop.ShopItem;
 import model.logic.Shop.OAtarItem;
 import model.logic.Shop.OAiryamanItem;
 import model.logic.Shop.OAnahitaItem;
+import model.logic.Shop.OAergiaItem;
 import model.levels.Level;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ public class ShopManager {
         items.add(new OAtarItem());
         items.add(new OAiryamanItem());
         items.add(new OAnahitaItem());
+        items.add(new OAergiaItem());
     }
 
     public List<ShopItem> getItems() {

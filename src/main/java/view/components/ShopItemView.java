@@ -7,7 +7,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Button;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import model.logic.Shop.ShopItem;
 
 public class ShopItemView extends VBox {
@@ -157,6 +156,13 @@ public class ShopItemView extends VBox {
                        "currently present in the network. This improves " +
                        "the quality and reliability of all active packets.";
                        
+            case "Scroll of Aergia":
+                return "Cost: 10 coins\n" +
+                       "Effect: Adds 1 Aergia scroll to your inventory.\n\n" +
+                       "Use Aergia from the game HUD to place a ❌ mark on a wire.\n" +
+                       "Packets crossing the mark will move at constant speed (no acceleration)\n" +
+                       "for 20 seconds. Cooldown: 20 seconds.";
+
             default:
                 return "No description available for this item.";
         }

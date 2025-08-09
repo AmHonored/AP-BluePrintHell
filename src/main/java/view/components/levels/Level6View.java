@@ -5,11 +5,13 @@ import model.entity.systems.StartSystem;
 import model.entity.systems.DDosSystem;
 import model.entity.systems.AntiVirusSystem;
 import model.entity.systems.EndSystem;
+import model.entity.systems.DistributorSystem;
 import model.entity.ports.SquarePort;
 import view.components.systems.StartSystemView;
 import view.components.systems.DDosSystemView;
 import view.components.systems.AntiVirusSystemView;
 import view.components.systems.EndSystemView;
+import view.components.systems.DistributorSystemView;
 import view.components.systems.SystemView;
 import view.components.ports.PortView;
 import manager.game.LevelManager;
@@ -121,6 +123,8 @@ public class Level6View extends LevelView {
                 systemView = new DDosSystemView((DDosSystem) system);
             } else if (system instanceof AntiVirusSystem) {
                 systemView = new AntiVirusSystemView((AntiVirusSystem) system);
+            } else if (system instanceof DistributorSystem) {
+                systemView = new DistributorSystemView((DistributorSystem) system);
             } else if (system instanceof EndSystem) {
                 systemView = new EndSystemView((EndSystem) system);
             }

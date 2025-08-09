@@ -4,6 +4,7 @@ import javafx.geometry.Point2D;
 import model.entity.systems.System;
 import model.wire.Wire;
 import model.entity.packets.Packet;
+import model.entity.packets.ProtectedPacket;
 import java.util.Random;
 
 public abstract class Port {
@@ -17,6 +18,13 @@ public abstract class Port {
     protected final PortType type;
     protected Point2D position;
     protected Wire wire;
+
+    /**
+     * Logical shape kind of this port. This can change dynamically (e.g., due to massive packets)
+     * to alter compatibility behavior without replacing the port instance or wire.
+     */
+    public enum ShapeKind { SQUARE, TRIANGLE, HEXAGON }
+    private ShapeKind shapeKind = ShapeKind.SQUARE;
 
     public Port(String id, System system, PortType type, Point2D position) {
         this.id = id;
@@ -51,6 +59,16 @@ public abstract class Port {
         return wire != null;
     }
 
+    public ShapeKind getShapeKind() {
+        return shapeKind;
+    }
+
+    public void setShapeKind(ShapeKind newKind) {
+        if (newKind != null) {
+            this.shapeKind = newKind;
+        }
+    }
+
     /**
      * Determines if this port should generate a confidential packet (20% chance)
      */
@@ -66,4 +84,36 @@ public abstract class Port {
     }
 
     public abstract boolean isCompatible(Packet packet);
+
+    /**
+     * Default compatibility based on current shape kind.
+     */
+    protected boolean isCompatibleByShapeKind(Packet packet) {
+        if (packet == null) return false;
+        // Handle protected packets by inherited movement
+        if (packet instanceof ProtectedPacket) {
+            ProtectedPacket protectedPacket = (ProtectedPacket) packet;
+            switch (shapeKind) {
+                case SQUARE:
+                    return protectedPacket.getInheritedMovement() == ProtectedPacket.InheritedMovement.SQUARE;
+                case TRIANGLE:
+                    return protectedPacket.getInheritedMovement() == ProtectedPacket.InheritedMovement.TRIANGLE;
+                case HEXAGON:
+                    return protectedPacket.getInheritedMovement() == ProtectedPacket.InheritedMovement.HEXAGON;
+            }
+            return false;
+        }
+
+        // Regular packets by type
+        switch (shapeKind) {
+            case SQUARE:
+                return packet instanceof model.entity.packets.SquarePacket;
+            case TRIANGLE:
+                return packet instanceof model.entity.packets.TrianglePacket;
+            case HEXAGON:
+                return packet instanceof model.entity.packets.HexagonPacket;
+            default:
+                return false;
+        }
+    }
 }

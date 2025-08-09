@@ -28,6 +28,11 @@ public abstract class Packet {
     private double deflectedY = 0.0;
     private int noise = 0;
     private boolean isTrojan = false;
+    private boolean isBitFragment = false;
+
+    // Aergia effect state: if active, speed is frozen at aergiaFrozenSpeed until aergiaEffectEndNanos
+    private double aergiaFrozenSpeed = -1.0;
+    private long aergiaEffectEndNanos = 0L;
 
     public Packet(String id, PacketType type, int size, Point2D position, Point2D direction, int health) {
         this.id = id;
@@ -217,6 +222,43 @@ public abstract class Packet {
      */
     public void convertToTrojan() {
         this.isTrojan = true;
+    }
+
+    public boolean isBitFragment() {
+        return isBitFragment;
+    }
+
+    public void setBitFragment(boolean bitFragment) {
+        this.isBitFragment = bitFragment;
+    }
+
+    // === Aergia helpers ===
+    public boolean isAergiaFrozenActive() {
+        return aergiaFrozenSpeed >= 0.0 && java.lang.System.nanoTime() < aergiaEffectEndNanos;
+    }
+
+    public void setAergiaFreeze(double frozenSpeed, long effectEndNanos) {
+        double oldSpeed = this.getSpeed();
+        this.aergiaFrozenSpeed = frozenSpeed;
+        this.aergiaEffectEndNanos = effectEndNanos;
+        double remainingSec = Math.max(0, (effectEndNanos - java.lang.System.nanoTime()) / 1_000_000_000.0);
+        java.lang.System.out.println("DEBUG: AERGIA FREEZE APPLIED → packet=" + id + 
+            ", originalSpeed=" + String.format("%.2f", oldSpeed) +
+            ", frozenSpeed=" + String.format("%.2f", frozenSpeed) + 
+            ", remainingSec≈" + String.format("%.1f", remainingSec));
+    }
+
+    public void clearAergiaFreezeIfExpired() {
+        if (aergiaFrozenSpeed >= 0.0 && java.lang.System.nanoTime() >= aergiaEffectEndNanos) {
+            aergiaFrozenSpeed = -1.0;
+            aergiaEffectEndNanos = 0L;
+            java.lang.System.out.println("DEBUG: AERGIA FREEZE EXPIRED → packet=" + id);
+        }
+    }
+
+    public double getAergiaFrozenSpeedOrNegative() {
+        clearAergiaFreezeIfExpired();
+        return aergiaFrozenSpeed;
     }
 
     /**

@@ -24,7 +24,9 @@ public class LevelSelectScene extends StackPane {
         "Level 4 - Spy System",
         "Level 5 - VPN Test Lab",
         "Level 6 - AntiVirus System",
-        "Level 7 - Confidential Packets"
+        "Level 7 - Confidential Packets",
+        "Level 8 - Distributor",
+        "Level 9 - Merge System"
     };
 
     public LevelSelectScene(boolean level2Unlocked) {
@@ -88,5 +90,7 @@ public class LevelSelectScene extends StackPane {
     public Button getLevel5Button() { return levelButtons[4]; }
     public Button getLevel6Button() { return levelButtons[5]; }
     public Button getLevel7Button() { return levelButtons[6]; }
+    public Button getLevel8Button() { return levelButtons[7]; }
+    public Button getLevel9Button() { return levelButtons[8]; }
     public Button getBackButton() { return backButton; }
 }

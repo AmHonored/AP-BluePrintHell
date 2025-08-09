@@ -6,12 +6,17 @@ import model.entity.systems.System;
 import model.entity.packets.Packet;
 import model.logic.state.GameState;
 import model.logic.state.LevelState;
+import model.logic.Shop.AergiaLogic;
 
 public class Level {
     private final GameState gameState;
     private final LevelState levelState;
     private final List<System> systems;
     private final List<Packet> packets;
+    // Aergia state
+    private int aergiaScrolls = 0;
+    private long aergiaCooldownEnd = 0L; // nanoTime
+    private java.util.List<AergiaLogic.AergiaMark> aergiaMarks = new java.util.ArrayList<>();
 
     public Level(int wireLength) {
         this.gameState = new GameState();
@@ -156,4 +161,22 @@ public class Level {
     public LevelState getLevelState() {
         return levelState;
     }
+
+    // === Aergia inventory/cooldown/marks ===
+    public int getAergiaScrolls() { return aergiaScrolls; }
+    public void addAergiaScrolls(int delta) { aergiaScrolls = Math.max(0, aergiaScrolls + delta); }
+    public boolean isAergiaOnCooldown() { 
+        long now = java.lang.System.nanoTime();
+        boolean onCooldown = now < aergiaCooldownEnd;
+        // Debug log occasionally to reduce spam
+        if (Math.random() < 0.01) {
+            java.lang.System.out.println("DEBUG: isAergiaOnCooldown - now: " + now + ", cooldownEnd: " + aergiaCooldownEnd + 
+                ", onCooldown: " + onCooldown + ", remaining: " + Math.max(0, (aergiaCooldownEnd - now) / 1_000_000_000.0) + "s");
+        }
+        return onCooldown;
+    }
+    public long getAergiaCooldownEnd() { return aergiaCooldownEnd; }
+    public void setAergiaCooldownEnd(long nanoTime) { this.aergiaCooldownEnd = nanoTime; }
+    public java.util.List<AergiaLogic.AergiaMark> getAergiaMarks() { return aergiaMarks; }
+    public void setAergiaMarks(java.util.List<AergiaLogic.AergiaMark> marks) { this.aergiaMarks = marks; }
 } 

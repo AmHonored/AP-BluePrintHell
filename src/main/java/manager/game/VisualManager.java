@@ -5,10 +5,10 @@ import javafx.stage.Stage;
 import view.menu.MenuScene;
 import view.menu.LevelSelectScene;
 import view.menu.SettingsScene;
-import view.game.GameScene;
-import model.levels.Level;
-import controller.GameController;
-import manager.game.LevelManager;
+// import view.game.GameScene; // not used
+// import model.levels.Level; // not used
+// import controller.GameController; // not used
+// import manager.game.LevelManager; // class in same package
 
 /**
  * VisualManager handles all scene and navigation logic for Blueprint Hell.
@@ -27,6 +27,14 @@ public class VisualManager {
         this.primaryStage = primaryStage;
         this.cssFile = cssFile;
         this.levelManager = new LevelManager(this, primaryStage, cssFile);
+    }
+
+    public Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    public String getCssFile() {
+        return cssFile;
     }
 
     /**
@@ -96,6 +104,26 @@ public class VisualManager {
             service.AudioManager.playButtonClick();
             levelManager.showLevel(7);
         });
+        try {
+            java.lang.reflect.Method m = levelSelectRoot.getClass().getMethod("getLevel8Button");
+            javafx.scene.control.Button level8Btn = (javafx.scene.control.Button) m.invoke(levelSelectRoot);
+            if (level8Btn != null) {
+                level8Btn.setOnAction(e -> {
+                    service.AudioManager.playButtonClick();
+                    levelManager.showLevel(8);
+                });
+            }
+        } catch (Throwable ignored) {}
+        try {
+            java.lang.reflect.Method m = levelSelectRoot.getClass().getMethod("getLevel9Button");
+            javafx.scene.control.Button level9Btn = (javafx.scene.control.Button) m.invoke(levelSelectRoot);
+            if (level9Btn != null) {
+                level9Btn.setOnAction(e -> {
+                    service.AudioManager.playButtonClick();
+                    levelManager.showLevel(9);
+                });
+            }
+        } catch (Throwable ignored) {}
         levelSelectRoot.getBackButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
             showMenu();

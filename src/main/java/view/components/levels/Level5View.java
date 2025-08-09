@@ -128,6 +128,10 @@ public class Level5View extends LevelView {
             return new DDosSystemView((DDosSystem) system);
         } else if (system instanceof SpySystem) {
             return new SpySystemView((SpySystem) system);
+        } else if (system instanceof DistributorSystem) {
+            return new DistributorSystemView((DistributorSystem) system);
+        } else if (system instanceof model.entity.systems.MergeSystem) {
+            return new MergeSystemView((model.entity.systems.MergeSystem) system);
         } else if (system instanceof EndSystem) {
             return new EndSystemView((EndSystem) system);
         }

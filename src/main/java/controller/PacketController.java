@@ -14,6 +14,8 @@ import view.components.packets.HexagonPacketView;
 import view.components.packets.ProtectedPacketView;
 import view.components.packets.ConfidentialPacketView;
 import view.components.packets.MassivePacketView;
+import view.components.packets.BitCirclePacketView;
+import view.components.packets.BitRectPacketView;
 import javafx.scene.layout.Pane;
 import model.levels.Level;
 import java.util.HashMap;
@@ -41,6 +43,10 @@ public class PacketController {
             view = new ConfidentialPacketView((ConfidentialPacket) packet);
         } else if (packet instanceof MassivePacket) {
             view = new MassivePacketView((MassivePacket) packet);
+        } else if (packet instanceof model.entity.packets.bits.BitCirclePacket) {
+            view = new BitCirclePacketView((model.entity.packets.bits.BitCirclePacket) packet);
+        } else if (packet instanceof model.entity.packets.bits.BitRectPacket) {
+            view = new BitRectPacketView((model.entity.packets.bits.BitRectPacket) packet);
         } else if (packet instanceof SquarePacket) {
             view = new SquarePacketView((SquarePacket) packet);
         } else if (packet instanceof TrianglePacket) {
@@ -75,11 +81,7 @@ public class PacketController {
         }
         if (level != null && packet != null) {
             level.removePacket(packet);
-            level.incrementPacketLoss();
-            if (level.isGameOver() && !level.getGameOverFlag()) {
-                level.setGameOver(true);
-                // Optionally: notify UI or stop timers here
-            }
+            // Do not automatically count as loss here. Systems determine loss/coins.
         }
     }
 

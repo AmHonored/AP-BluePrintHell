@@ -8,4 +8,6 @@ public enum SystemType {
     SpySystem,
     VPNSystem,
     AntiVirusSystem,
+    DistributorSystem,
+    MergeSystem,
 }

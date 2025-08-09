@@ -8,6 +8,7 @@ public class GameButtons extends HBox {
     private final Button shopButton;
     private final Button pauseButton;
     private final Button menuButton;
+    // Aergia moved to HUD
 
     public GameButtons() {
         this.getStyleClass().add("controls-pane");

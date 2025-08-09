@@ -35,18 +35,26 @@ public class HexagonPacket extends Packet {
     }
 
     private void updateForwardMovement(double deltaTimeSeconds, boolean compatiblePort) {
-        // HexagonPacket: Accelerate on compatible ports, decelerate on incompatible ports
-        if (compatiblePort) {
-            // Accelerate on compatible ports
-            currentSpeed += ACCELERATION * deltaTimeSeconds;
-            if (currentSpeed > MAX_SPEED) {
-                currentSpeed = MAX_SPEED;
+        // Respect Aergia freeze if active: force constant speed
+        if (isAergiaFrozenActive()) {
+            double frozen = getAergiaFrozenSpeedOrNegative();
+            if (frozen >= 0.0) {
+                currentSpeed = frozen;
             }
         } else {
-            // Decelerate on incompatible ports
-            currentSpeed -= DECELERATION * deltaTimeSeconds;
-            if (currentSpeed < MIN_SPEED) {
-                currentSpeed = MIN_SPEED;
+            // HexagonPacket: Accelerate on compatible ports, decelerate on incompatible ports
+            if (compatiblePort) {
+                // Accelerate on compatible ports
+                currentSpeed += ACCELERATION * deltaTimeSeconds;
+                if (currentSpeed > MAX_SPEED) {
+                    currentSpeed = MAX_SPEED;
+                }
+            } else {
+                // Decelerate on incompatible ports
+                currentSpeed -= DECELERATION * deltaTimeSeconds;
+                if (currentSpeed < MIN_SPEED) {
+                    currentSpeed = MIN_SPEED;
+                }
             }
         }
         distanceTraveled += currentSpeed * deltaTimeSeconds;

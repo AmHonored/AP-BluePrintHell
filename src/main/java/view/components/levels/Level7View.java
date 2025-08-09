@@ -4,6 +4,7 @@ import javafx.geometry.Point2D;
 import model.entity.systems.StartSystem;
 import model.entity.systems.VPNSystem;
 import model.entity.systems.IntermediateSystem;
+import model.entity.systems.DistributorSystem;
 import model.entity.systems.EndSystem;
 import model.entity.ports.SquarePort;
 import model.entity.ports.TrianglePort;
@@ -11,6 +12,7 @@ import view.components.systems.StartSystemView;
 import view.components.systems.VPNSystemView;
 import view.components.systems.IntermediateSystemView;
 import view.components.systems.EndSystemView;
+import view.components.systems.DistributorSystemView;
 import view.components.systems.SystemView;
 import view.components.ports.PortView;
 import view.components.ports.TrianglePortView;
@@ -134,6 +136,8 @@ public class Level7View extends LevelView {
             return new VPNSystemView((VPNSystem) system);
         } else if (system instanceof IntermediateSystem) {
             return new IntermediateSystemView((IntermediateSystem) system);
+        } else if (system instanceof DistributorSystem) {
+            return new DistributorSystemView((DistributorSystem) system);
         } else if (system instanceof EndSystem) {
             return new EndSystemView((EndSystem) system);
         }

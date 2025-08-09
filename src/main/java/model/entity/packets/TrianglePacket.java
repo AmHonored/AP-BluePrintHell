@@ -18,12 +18,17 @@ public class TrianglePacket extends Packet {
     public void updateMovement(double deltaTimeSeconds, boolean compatiblePort) {
         super.updateMovement(deltaTimeSeconds, compatiblePort);
         
-        if (compatiblePort) {
-            currentSpeed = BASE_SPEED;
+        if (isAergiaFrozenActive()) {
+            double frozen = getAergiaFrozenSpeedOrNegative();
+            if (frozen >= 0.0) currentSpeed = frozen;
         } else {
-            currentSpeed += ACCELERATION * deltaTimeSeconds;
-            if (currentSpeed > MAX_SPEED) {
-                currentSpeed = MAX_SPEED;
+            if (compatiblePort) {
+                currentSpeed = BASE_SPEED;
+            } else {
+                currentSpeed += ACCELERATION * deltaTimeSeconds;
+                if (currentSpeed > MAX_SPEED) {
+                    currentSpeed = MAX_SPEED;
+                }
             }
         }
     }

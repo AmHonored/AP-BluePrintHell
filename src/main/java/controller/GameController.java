@@ -10,14 +10,17 @@ import manager.game.VisualManager;
 import manager.game.MovementManager;
 import manager.game.ConnectionManager;
 import manager.game.ShopManager;
-import manager.game.ImpactManager;
+// import manager.game.ImpactManager;
 import manager.packets.PacketManager;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
 import javafx.scene.layout.Pane;
-import javafx.geometry.Point2D;
+// import javafx.geometry.Point2D;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.text.Text;
+import model.wire.Wire;
 
 public class GameController {
     private final Level level;
@@ -42,6 +45,24 @@ public class GameController {
     private Timeline systemUpdateTimer;
     private Timeline continuousTransferTimer;  // NEW: 10ms timer for packet storage transfers
     private boolean isRunning = false;
+    // Aergia placement state
+    private boolean awaitingAergiaPlacement = false;
+    private final java.util.List<AergiaMarkVisual> activeAergiaVisuals = new java.util.ArrayList<>();
+    
+    // Helper class to track visual cross marks and their associated data
+    private static class AergiaMarkVisual {
+        final javafx.scene.text.Text crossText;
+        final model.wire.Wire wire;
+        final double progress;
+        final long removeTime;
+        
+        AergiaMarkVisual(javafx.scene.text.Text crossText, model.wire.Wire wire, double progress, long removeTime) {
+            this.crossText = crossText;
+            this.wire = wire;
+            this.progress = progress;
+            this.removeTime = removeTime;
+        }
+    }
 
     public GameController(Level level, Object gameView, VisualManager visualManager) {
         this.level = level;
@@ -199,7 +220,79 @@ public class GameController {
             
             // Setup wire dragging events on the game pane
             setupWireDraggingEvents();
+        setupAergiaPlacementHandler();
         }
+    }
+
+    private void setupAergiaPlacementHandler() {
+        Pane pane = (gameScene != null) ? gameScene.getGamePane() : (levelView != null ? levelView.getGamePane() : null);
+        if (pane == null) return;
+        pane.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
+            java.lang.System.out.println("DEBUG: Mouse clicked in game pane - awaitingAergiaPlacement: " + awaitingAergiaPlacement);
+            if (!awaitingAergiaPlacement) return;
+            
+            // Select the nearest ACTIVE wire to the click using geometric distance
+            javafx.geometry.Point2D local = pane.sceneToLocal(e.getSceneX(), e.getSceneY());
+            java.lang.System.out.println("DEBUG: Click position: " + local);
+            
+            Wire chosenWire = null;
+            double chosenT = 0.0;
+            double bestDistance = Double.MAX_VALUE;
+            double tolerancePx = 16.0; // how close the click must be to a wire path
+            for (model.wire.Wire w : connectionManager.getWires()) {
+                if (w == null || !w.isActive()) continue;
+                double tCandidate = model.logic.Shop.AergiaLogic.findClosestProgress(w, local);
+                javafx.geometry.Point2D posOnWire = w.getPositionAtProgress(tCandidate);
+                double d = posOnWire.distance(local);
+                java.lang.System.out.println("DEBUG: Candidate wire " + w.getId() + " distance=" + String.format("%.1f", d));
+                if (d < bestDistance) {
+                    bestDistance = d;
+                    chosenWire = w;
+                    chosenT = tCandidate;
+                }
+            }
+            if (chosenWire == null || bestDistance > tolerancePx) {
+                java.lang.System.out.println("DEBUG: No ACTIVE wire close enough to click (bestDistance=" + String.format("%.1f", bestDistance) + ")");
+                return;
+            }
+            java.lang.System.out.println("DEBUG: Placing Aergia mark on active wire: " + chosenWire.getId() +
+                " at progress=" + String.format("%.3f", chosenT) + ", distance≈" + String.format("%.1f", bestDistance));
+            // Place mark
+            model.logic.Shop.AergiaLogic.addMark(level, chosenWire, chosenT);
+            // Consume a scroll
+            level.addAergiaScrolls(-1);
+            java.lang.System.out.println("DEBUG: Consumed 1 Aergia scroll - remaining: " + level.getAergiaScrolls());
+            
+            // Visualize a ❌ at that position
+            javafx.geometry.Point2D p = chosenWire.getPositionAtProgress(chosenT);
+            Text cross = new Text("❌");
+            cross.setStyle("-fx-font-size: 20px; -fx-fill: #ff6b85; -fx-effect: dropshadow(gaussian, rgba(233,69,96,0.7), 8, 0.6, 0, 0);");
+            cross.setX(p.getX() - 6);
+            cross.setY(p.getY() + 6);
+            pane.getChildren().add(cross);
+            
+            // Track this visual mark for position updates
+            long removeTime = java.lang.System.nanoTime() + 20_000_000_000L; // 20 seconds
+            AergiaMarkVisual visual = new AergiaMarkVisual(cross, chosenWire, chosenT, removeTime);
+            activeAergiaVisuals.add(visual);
+            
+            // Remove cross when effect ends (20s)
+            javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(20));
+            delay.setOnFinished(ev -> {
+                pane.getChildren().remove(cross);
+                activeAergiaVisuals.remove(visual);
+                java.lang.System.out.println("DEBUG: Aergia mark visual removed after 20 seconds");
+            });
+            delay.play();
+            awaitingAergiaPlacement = false;
+            java.lang.System.out.println("DEBUG: Aergia placement complete - awaitingPlacement set to false");
+            java.lang.System.out.println("DEBUG: Current cooldown status: " + level.isAergiaOnCooldown() + 
+                ", cooldownEnd: " + level.getAergiaCooldownEnd());
+            if (gameScene != null) gameScene.updateAergiaButtonText();
+            HUDScene currentHud = getHUDScene();
+            if (currentHud != null) updateAergiaHudButtonEnabled(currentHud);
+            e.consume();
+        });
     }
     
     /**
@@ -270,6 +363,9 @@ public class GameController {
                     
                     // Update UI
                     uiController.updateHUD();
+                    
+                    // Update cross mark positions to follow wire changes
+                    updateAergiaMarkPositions();
                     
                     // Check game over condition
                     checkGameOver();
@@ -362,11 +458,105 @@ public class GameController {
                 service.AudioManager.playButtonClick();
                 handleMenuButton();
             });
+            // Aergia button is now on HUD, hook it here and control enabled state
+            HUDScene hud = getHUDScene();
+            if (hud != null) {
+                updateAergiaHudButtonEnabled(hud);
+                hud.getAergiaButton().setOnAction(e -> {
+                    service.AudioManager.playButtonClick();
+                    
+                    // Detailed debug logging for button click
+                    java.lang.System.out.println("DEBUG: Aergia button clicked!");
+                    java.lang.System.out.println("DEBUG: - scrolls: " + level.getAergiaScrolls());
+                    java.lang.System.out.println("DEBUG: - cooldown: " + level.isAergiaOnCooldown());
+                    java.lang.System.out.println("DEBUG: - cooldownEnd: " + level.getAergiaCooldownEnd());
+                    java.lang.System.out.println("DEBUG: - currentTime: " + java.lang.System.nanoTime());
+                    java.lang.System.out.println("DEBUG: - awaitingPlacement: " + awaitingAergiaPlacement);
+                    
+                    // Check if we have active wires to place marks on
+                    boolean hasActiveWires = connectionManager.getWires().stream().anyMatch(wire -> wire.isActive());
+                    boolean hasAnyWires = !connectionManager.getWires().isEmpty();
+                    java.lang.System.out.println("DEBUG: - hasActiveWires: " + hasActiveWires);
+                    java.lang.System.out.println("DEBUG: - hasAnyWires: " + hasAnyWires);
+                    java.lang.System.out.println("DEBUG: - totalWires: " + connectionManager.getWires().size());
+                    
+                    if (!hasActiveWires) {
+                        java.lang.System.out.println("DEBUG: Aergia button clicked but no active wires available - will show message but allow placement attempt");
+                        // Don't return here - let the user try to click and get feedback about inactive wires
+                    }
+                    
+                    updateAergiaHudButtonEnabled(hud);
+                    if (level.getAergiaScrolls() > 0 && !level.isAergiaOnCooldown()) {
+                        awaitingAergiaPlacement = true;
+                        if (gameScene != null) {
+                            gameScene.updateAergiaButtonText();
+                            gameScene.showAergiaPlacementHint();
+                        }
+                        java.lang.System.out.println("DEBUG: Aergia placement mode activated - click on an active wire to place mark");
+                    } else {
+                        java.lang.System.out.println("DEBUG: Aergia placement NOT activated - conditions not met");
+                    }
+                });
+            }
         } else {
             System.out.println("DEBUG: GameController.setupEventHandlers - buttons is null!");
         }
         
         // Note: HUD hide/show button functionality is handled internally by HUDScene
+    }
+
+    private boolean areAllSystemsConnected() {
+        for (model.entity.systems.System sys : level.getSystems()) {
+            // Check input ports - must be connected AND have active wire
+            for (model.entity.ports.Port p : sys.getInPorts()) {
+                if (!p.isConnected()) {
+                    java.lang.System.out.println("DEBUG: areAllSystemsConnected - FAILED: system=" + sys.getClass().getSimpleName() + 
+                        ", input port " + p.getId() + " not connected");
+                    return false;
+                }
+                model.wire.Wire wire = p.getWire();
+                if (wire != null && !wire.isActive()) {
+                    java.lang.System.out.println("DEBUG: areAllSystemsConnected - FAILED: system=" + sys.getClass().getSimpleName() + 
+                        ", input port " + p.getId() + " wire " + wire.getId() + " is INACTIVE");
+                    return false;
+                }
+            }
+            // Check output ports - must be connected AND have active wire  
+            for (model.entity.ports.Port p : sys.getOutPorts()) {
+                if (!p.isConnected()) {
+                    java.lang.System.out.println("DEBUG: areAllSystemsConnected - FAILED: system=" + sys.getClass().getSimpleName() + 
+                        ", output port " + p.getId() + " not connected");
+                    return false;
+                }
+                model.wire.Wire wire = p.getWire();
+                if (wire != null && !wire.isActive()) {
+                    java.lang.System.out.println("DEBUG: areAllSystemsConnected - FAILED: system=" + sys.getClass().getSimpleName() + 
+                        ", output port " + p.getId() + " wire " + wire.getId() + " is INACTIVE");
+                    return false;
+                }
+            }
+        }
+        java.lang.System.out.println("DEBUG: areAllSystemsConnected - SUCCESS: All systems have active wire connections");
+        return true;
+    }
+
+    private void updateAergiaHudButtonEnabled(HUDScene hud) {
+        // Aergia should be usable as long as player has scrolls and is not on cooldown.
+        // Do NOT gate on wire availability here; placement handler already validates active wires.
+        boolean enabled = level.getAergiaScrolls() > 0 && !level.isAergiaOnCooldown();
+        hud.getAergiaButton().setDisable(!enabled);
+        if (gameScene != null) gameScene.updateAergiaButtonText();
+        
+        // Debug log the decision with wire details
+        boolean hasActiveWires = !connectionManager.getWires().isEmpty() && connectionManager.getWires().stream().anyMatch(wire -> wire.isActive());
+        boolean hasAnyWires = !connectionManager.getWires().isEmpty();
+        java.lang.System.out.println("DEBUG: updateAergiaHudButtonEnabled - scrolls: " + level.getAergiaScrolls() + 
+            ", cooldown: " + level.isAergiaOnCooldown() + ", hasActiveWires: " + hasActiveWires + 
+            ", hasAnyWires: " + hasAnyWires + ", enabled: " + enabled);
+        java.lang.System.out.println("DEBUG: Wire status:");
+        for (model.wire.Wire wire : connectionManager.getWires()) {
+            java.lang.System.out.println("DEBUG:   - Wire " + wire.getId() + ": active=" + wire.isActive());
+        }
     }
 
     /**
@@ -402,7 +592,7 @@ public class GameController {
      */
     public void updateStartSystemPlayButtons() {
         systemController.updateAllSystemsReadyState();
-        boolean allReady = systemController.areAllSystemsReady();
+        // boolean allReady = systemController.areAllSystemsReady();
         
         // Update play button states if we have access to the views
         // This would need to be called from the view layer
@@ -523,6 +713,36 @@ public class GameController {
         } else {
             java.lang.System.out.println("DEBUG: GameController.updateHUD - HUD scene is null!");
         }
+        // Update Aergia button text/cooldown state (both GameScene and LevelView modes)
+        HUDScene currentHud = getHUDScene();
+        if (currentHud != null) {
+            // Prune expired marks and refresh cooldown state
+            model.logic.Shop.AergiaLogic.pruneExpiredMarks(level);
+
+            // Update label depending on context
+            if (gameScene != null) {
+                gameScene.updateAergiaButtonText();
+            } else {
+                String text = "Aergia (" + level.getAergiaScrolls() + ")";
+                if (level.isAergiaOnCooldown()) text += " \u23F3";
+                currentHud.getAergiaButton().setText(text);
+                java.lang.System.out.println(
+                    "DEBUG: updateAergiaButtonText(LevelView) - text='" + text + "', scrolls=" + level.getAergiaScrolls() +
+                    ", onCooldown=" + level.isAergiaOnCooldown() + 
+                    ", currentlyDisabled=" + currentHud.getAergiaButton().isDisabled()
+                );
+            }
+
+            // Update enabled/disabled each HUD tick so it re-enables as soon as cooldown ends
+            updateAergiaHudButtonEnabled(currentHud);
+
+            boolean hasActiveWires = connectionManager.getWires().stream().anyMatch(wire -> wire.isActive());
+            boolean onCooldown = level.isAergiaOnCooldown();
+            // Silent in production: rely on enabled calculation
+            if (!onCooldown && level.getAergiaScrolls() > 0 && currentHud.getAergiaButton().isDisabled()) {
+                currentHud.getAergiaButton().setDisable(false);
+            }
+        }
     }
 
     /**
@@ -606,5 +826,34 @@ public class GameController {
     public void setupEventHandlersManually() {
         System.out.println("DEBUG: GameController.setupEventHandlersManually - called");
         setupEventHandlers();
+    }
+    
+    /**
+     * Update positions of all active Aergia cross marks to follow wire changes
+     */
+    private void updateAergiaMarkPositions() {
+        long now = java.lang.System.nanoTime();
+        // Remove expired visuals
+        activeAergiaVisuals.removeIf(visual -> {
+            if (now >= visual.removeTime) {
+                // Remove from scene if still present
+                if (gameScene != null && gameScene.getGamePane() != null) {
+                    gameScene.getGamePane().getChildren().remove(visual.crossText);
+                } else if (levelView != null && levelView.getGamePane() != null) {
+                    levelView.getGamePane().getChildren().remove(visual.crossText);
+                }
+                return true;
+            }
+            return false;
+        });
+        
+        // Update positions of remaining visuals
+        for (AergiaMarkVisual visual : activeAergiaVisuals) {
+            if (visual.wire != null) {
+                javafx.geometry.Point2D newPos = visual.wire.getPositionAtProgress(visual.progress);
+                visual.crossText.setX(newPos.getX() - 6);
+                visual.crossText.setY(newPos.getY() + 6);
+            }
+        }
     }
 }

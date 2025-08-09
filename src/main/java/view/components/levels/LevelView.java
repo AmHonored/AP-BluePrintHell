@@ -55,6 +55,8 @@ public abstract class LevelView extends StackPane {
         hud = new HUDScene(level);
         hud.getStyleClass().add("hud-pane");
         mainLayout.setTop(hud);
+        // Enable/disable Aergia button based on connections and inventory
+        updateAergiaButtonState();
 
         // Bottom controls
         controls = new GameButtons();
@@ -71,6 +73,17 @@ public abstract class LevelView extends StackPane {
         // Shop overlay
         shopManager = new ShopManager(level);
         shopOverlay = new ShopScene(shopManager, level);
+        // Update HUD Aergia button when items change (e.g., Aergia purchased)
+        shopOverlay.setOnItemsChanged(() -> {
+            if (hud != null) {
+                String text = "Aergia (" + level.getAergiaScrolls() + ")";
+                if (level.isAergiaOnCooldown()) text += " \u23F3"; // hourglass
+                hud.getAergiaButton().setText(text);
+                // Also update enabled/disabled immediately so the button becomes usable after purchase in LevelView mode
+                boolean enabled = level.getAergiaScrolls() > 0 && !level.isAergiaOnCooldown();
+                hud.getAergiaButton().setDisable(!enabled);
+            }
+        });
         shopOverlay.setVisible(false);
         shopOverlay.getCloseButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
@@ -87,6 +100,18 @@ public abstract class LevelView extends StackPane {
 
         // Add overlays to stack
         this.getChildren().addAll(shopOverlay, gameOverOverlay, levelCompleteOverlay);
+    }
+
+    private boolean areAllPortsConnected() {
+        for (model.entity.systems.System sys : level.getSystems()) {
+            for (model.entity.ports.Port p : sys.getInPorts()) {
+                if (!p.isConnected()) return false;
+            }
+            for (model.entity.ports.Port p : sys.getOutPorts()) {
+                if (!p.isConnected()) return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -232,6 +257,17 @@ public abstract class LevelView extends StackPane {
             hud.getTemporalProgress().getProgressBar().setProgress(level.getCurrentTime() / 100.0); // Normalize to 0-1
             hud.getTemporalProgress().getTimeLabel().setText("Time: " + level.getCurrentTime());
         }
+        updateAergiaButtonState();
+    }
+
+    private void updateAergiaButtonState() {
+        String text = "Aergia (" + level.getAergiaScrolls() + ")";
+        if (level.isAergiaOnCooldown()) text += " \u23F3";
+        hud.getAergiaButton().setText(text);
+        // Also enforce enabled/disabled here when running in LevelView mode
+        boolean enabled = level.getAergiaScrolls() > 0 && !level.isAergiaOnCooldown();
+        hud.getAergiaButton().setDisable(!enabled);
+        // Silent in production: no per-tick logging
     }
 
     /**

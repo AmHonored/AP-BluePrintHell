@@ -3,36 +3,23 @@ package view.game;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
-import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.control.Label;
-import javafx.scene.control.Button;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.shape.Circle;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
+// import javafx.scene.control.Label; // kept for potential future HUD binding
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import java.util.ArrayList;
 import java.util.List;
 import model.levels.Level;
 import controller.GameController;
-import view.game.HUDScene;
-import view.game.GameButtons;
-import view.game.GameOverScene;
-import view.game.LevelCompleteScene;
-import view.game.ShopScene;
-import view.game.TemporalProgress;
+// Same-package types don't need imports
 import manager.game.VisualManager;
 import controller.PacketController;
 import manager.packets.PacketManager;
 import manager.game.ShopManager;
 
 public class GameScene extends StackPane {
-    private Scene scene;
+    // private Scene scene; // reserved for future use
     private GameController gameController;
     private Level level;
 
@@ -79,6 +66,9 @@ public class GameScene extends StackPane {
         // Set up ShopManager and ShopScene
         shopManager = new ShopManager(level);
         shopOverlay = new ShopScene(shopManager, level);
+        shopOverlay.setOnItemsChanged(() -> {
+            updateAergiaButtonText();
+        });
         shopOverlay.setVisible(false);
         shopOverlay.getCloseButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
@@ -90,10 +80,12 @@ public class GameScene extends StackPane {
         hud.getStyleClass().add("hud-pane");
         mainLayout.setTop(hud);
 
-        // Bottom controls
+        // Bottom controls (without Aergia; moved to HUD)
         controls = new GameButtons();
         controls.getStyleClass().add("controls-pane");
         mainLayout.setBottom(controls);
+
+        // Aergia button behavior is fully managed by GameController
 
         // Shop button will be set up by GameController
         
@@ -126,8 +118,22 @@ public class GameScene extends StackPane {
             gameController.setupEventHandlersManually();
         }
 
+        // Reflect initial Aergia count on button
+        updateAergiaButtonText();
+
         // Start the level timer
         startLevelTimer();
+    }
+
+    public void updateAergiaButtonText() {
+        String text = "Aergia (" + level.getAergiaScrolls() + ")";
+        if (level.isAergiaOnCooldown()) {
+            text += " ⏳";
+        }
+        if (hud != null) {
+            hud.getAergiaButton().setText(text);
+            // Let GameController control enabled/disabled state; only update label here
+        }
     }
 
     private void startLevelTimer() {
@@ -160,6 +166,18 @@ public class GameScene extends StackPane {
             temporalProgress.getTimeLabel().setText(timeStr);
             temporalProgress.getProgressBar().setProgress((double)elapsedSeconds / levelDurationSeconds);
         }
+    }
+
+    // Display a brief hint overlay guiding the player to click a wire
+    public void showAergiaPlacementHint() {
+        javafx.scene.control.Label hint = new javafx.scene.control.Label("Click on a wire to place the ❌ mark");
+        hint.setStyle("-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: #00d4ff; -fx-font-weight: bold; -fx-padding: 8 12; -fx-background-radius: 8; -fx-border-color: #00d4ff; -fx-border-radius: 8; -fx-border-width: 2;");
+        hint.setMouseTransparent(true);
+        StackPane.setAlignment(hint, javafx.geometry.Pos.TOP_CENTER);
+        this.getChildren().add(hint);
+        javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(2.5));
+        delay.setOnFinished(ev -> this.getChildren().remove(hint));
+        delay.play();
     }
 
     private void onLevelTimerEnd() {

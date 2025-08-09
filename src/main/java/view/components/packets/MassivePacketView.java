@@ -21,8 +21,8 @@ public class MassivePacketView extends PacketView {
             circle.setFill(Color.CORAL);
             circle.setStroke(Color.DARKSALMON);
         } else {
-            circle.setFill(Color.GRAY);
-            circle.setStroke(Color.DARKGRAY);
+            circle.setFill(Color.SLATEBLUE);
+            circle.setStroke(Color.DARKSLATEBLUE);
         }
         circle.setStrokeWidth(1.5);
         return circle;

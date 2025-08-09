@@ -1,9 +1,6 @@
 package manager.packets;
 
 import model.entity.ports.Port;
-import model.entity.ports.SquarePort;
-import model.entity.ports.TrianglePort;
-import model.entity.ports.HexagonPort;
 import model.entity.packets.Packet;
 import model.entity.packets.HexagonPacket;
 import model.entity.packets.ConfidentialPacket;
@@ -17,6 +14,13 @@ import java.util.HashMap;
 import java.util.Map;
 import model.levels.Level;
 import controller.PacketController;
+import javafx.scene.layout.Pane;
+import view.components.ports.PortView;
+import view.components.ports.SquarePortView;
+import view.components.ports.TrianglePortView;
+import view.components.ports.HexagonPortView;
+import view.components.systems.SystemView;
+import view.components.systems.MergeSystemView;
 
 public class PacketManager {
     private static final List<Packet> movingPackets = new ArrayList<>();
@@ -35,17 +39,29 @@ public class PacketManager {
     }
     
     public static boolean sendPacket(Port sourcePort, Packet packet) {
+        return sendPacket(sourcePort, packet, false);
+    }
+    
+    public static boolean sendPacket(Port sourcePort, Packet packet, boolean preserveCompatibility) {
         Wire wire = sourcePort.getWire();
         
         if (wire == null || !sourcePort.isConnected() || !wire.isAvailable()) {
             return false;
         }
+        // Ensure packet is in level list before visualization/movement starts
+        if (level != null && packet != null && !level.getPackets().contains(packet)) {
+            level.addPacket(packet);
+        }
         
-        boolean result = startMovement(packet, wire);
+        boolean result = startMovement(packet, wire, preserveCompatibility);
         return result;
     }
     
     public static boolean startMovement(Packet packet, Wire wire) {
+        return startMovement(packet, wire, false);
+    }
+    
+    public static boolean startMovement(Packet packet, Wire wire, boolean preserveCompatibility) {
         if (packet.isMoving()) {
             return false;
         }
@@ -66,8 +82,13 @@ public class PacketManager {
         packet.setMovementStartTime(java.lang.System.nanoTime());
         packet.setMoving(true);
         packet.setInSystem(false);
-        boolean isCompatible = isPortCompatibleWithPacket(wire.getSource(), packet);
-        packet.setCompatibleWithCurrentPort(isCompatible);
+        
+        // Only recalculate compatibility if not preserving it
+        boolean isCompatible = packet.isCompatibleWithCurrentPort(); // Use current state
+        if (!preserveCompatibility) {
+            isCompatible = isPortCompatibleWithPacket(wire.getSource(), packet);
+            packet.setCompatibleWithCurrentPort(isCompatible);
+        }
         
         // Special initialization for HexagonPacket
         if (packet instanceof HexagonPacket) {
@@ -101,17 +122,10 @@ public class PacketManager {
         return true;
     }
 
-    // Determine compatibility by packet shape type against port class, even though any ports can connect.
+    // Determine compatibility using the port's current (possibly dynamic) shape kind.
     private static boolean isPortCompatibleWithPacket(Port port, Packet packet) {
         if (port == null || packet == null) return false;
-        if (port instanceof SquarePort) {
-            return packet instanceof model.entity.packets.SquarePacket || (packet instanceof model.entity.packets.ProtectedPacket && ((model.entity.packets.ProtectedPacket) packet).getInheritedMovement() == model.entity.packets.ProtectedPacket.InheritedMovement.SQUARE);
-        } else if (port instanceof TrianglePort) {
-            return packet instanceof model.entity.packets.TrianglePacket || (packet instanceof model.entity.packets.ProtectedPacket && ((model.entity.packets.ProtectedPacket) packet).getInheritedMovement() == model.entity.packets.ProtectedPacket.InheritedMovement.TRIANGLE);
-        } else if (port instanceof HexagonPort) {
-            return packet instanceof model.entity.packets.HexagonPacket || (packet instanceof model.entity.packets.ProtectedPacket && ((model.entity.packets.ProtectedPacket) packet).getInheritedMovement() == model.entity.packets.ProtectedPacket.InheritedMovement.HEXAGON);
-        }
-        return false;
+        return port.isCompatible(packet);
     }
     
     public static void updateMovingPackets(double deltaTimeSeconds) {
@@ -147,6 +161,16 @@ public class PacketManager {
 
         // After movement updates, handle collisions and off-wire losses
         handleCollisionsAndOffWireLoss();
+
+        // After movement/collision handling, process distributor forwarding
+        if (level != null) {
+            for (model.entity.systems.System sys : level.getSystems()) {
+                if (sys instanceof model.entity.systems.DistributorSystem) {
+                    manager.systems.DistributorSystemManager mgr = new manager.systems.DistributorSystemManager((model.entity.systems.DistributorSystem) sys);
+                    mgr.forwardPackets();
+                }
+            }
+        }
     }
     
     private static void updatePacketMovement(Packet packet, double deltaTimeSeconds) {
@@ -167,12 +191,33 @@ public class PacketManager {
             double distanceTraveled = hexPacket.getDistanceTraveled();
             // Apply input-port incompatibility speed doubling for hexagon
             boolean inputCompatible = (wire.getDest() != null) && isPortCompatibleWithPacket(wire.getDest(), packet);
-            if (!inputCompatible) {
+            if (!inputCompatible && !packet.isAergiaFrozenActive()) {
                 // Add extra distance equal to current speed step to effectively double speed
                 distanceTraveled += hexPacket.getSpeed() * deltaTimeSeconds;
                 hexPacket.setDistanceTraveled(distanceTraveled);
             }
+            
+            // Debug log for hexagon speed freezing (reduced frequency)
+            if (Math.random() < 0.016 && packet.isAergiaFrozenActive()) { // ~1/60 chance
+                java.lang.System.out.println("DEBUG: HEXAGON MOVEMENT (FROZEN) → packet=" + packet.getId() + 
+                    ", frozenSpeed=" + String.format("%.2f", packet.getAergiaFrozenSpeedOrNegative()) + 
+                    ", normalSpeed=" + String.format("%.2f", hexPacket.getSpeed()) + 
+                    ", speedDoubleSkipped=" + (!inputCompatible));
+            }
             double progress = distanceTraveled / wireLength;
+            // Check Aergia mark crossing and freeze speed if applicable for the remaining effect time
+            if (level != null && !level.getAergiaMarks().isEmpty()) {
+                long now = java.lang.System.nanoTime();
+                for (model.logic.Shop.AergiaLogic.AergiaMark mark : level.getAergiaMarks()) {
+                    if (mark.wire == wire && mark.effectEndNanos > now && progress >= mark.progress) {
+                        packet.setAergiaFreeze(hexPacket.getSpeed(), mark.effectEndNanos);
+                        java.lang.System.out.println("DEBUG: AERGIA MARK CROSSED (hexagon) → packet=" + packet.getId() +
+                            ", wire=" + wire.getId() + ", progress=" + String.format("%.3f", progress) +
+                            ", speedFrozenAt=" + String.format("%.2f", hexPacket.getSpeed()));
+                        break;
+                    }
+                }
+            }
             
             // Clamp progress to valid range
             if (progress < 0.0) progress = 0.0;
@@ -217,13 +262,38 @@ public class PacketManager {
      * Standard movement logic for regular packets
      */
     private static void standardPacketMovement(Packet packet, double deltaTimeSeconds, double wireLength) {
-        double speed = packet.getSpeed();
+        // Respect Aergia freeze if active
+        double frozen = packet.getAergiaFrozenSpeedOrNegative();
+        double speed = (frozen >= 0.0) ? frozen : packet.getSpeed();
+        
+        // Debug log every 60 frames (reduce spam) to show speed being used
+        if (Math.random() < 0.016) { // ~1/60 chance
+            if (frozen >= 0.0) {
+                java.lang.System.out.println("DEBUG: PACKET MOVEMENT (FROZEN) → packet=" + packet.getId() + 
+                    ", usingSpeed=" + String.format("%.2f", speed) + " (frozen), normalSpeed=" + String.format("%.2f", packet.getSpeed()));
+            }
+        }
         // If entering an incompatible input port, double the speed for square/triangle
         Wire wire = packet.getCurrentWire();
-        if (wire != null && (packet instanceof model.entity.packets.SquarePacket || packet instanceof model.entity.packets.TrianglePacket || packet instanceof model.entity.packets.ProtectedPacket)) {
+        if (wire != null && frozen < 0.0 && (packet instanceof model.entity.packets.SquarePacket || packet instanceof model.entity.packets.TrianglePacket || packet instanceof model.entity.packets.ProtectedPacket)) {
             boolean inputCompatible = (wire.getDest() != null) && isPortCompatibleWithPacket(wire.getDest(), packet);
             if (!inputCompatible) {
                 speed *= 2.0;
+            }
+        }
+        // Apply Aergia suppression past marked points: once a packet passes
+        // any active mark on this wire, freeze its speed at current value for the mark duration
+        if (wire != null && frozen < 0.0 && level != null && !level.getAergiaMarks().isEmpty()) {
+            double progress = packet.getMovementProgress();
+            long now = java.lang.System.nanoTime();
+            for (model.logic.Shop.AergiaLogic.AergiaMark mark : level.getAergiaMarks()) {
+                if (mark.wire == wire && mark.effectEndNanos > now && progress >= mark.progress) {
+                    packet.setAergiaFreeze(speed, mark.effectEndNanos);
+                    java.lang.System.out.println("DEBUG: AERGIA MARK CROSSED (standard) → packet=" + packet.getId() +
+                        ", wire=" + wire.getId() + ", progress=" + String.format("%.3f", progress) +
+                        ", speedFrozenAt=" + String.format("%.2f", speed));
+                    break;
+                }
             }
         }
         double distanceToMove = speed * deltaTimeSeconds;
@@ -349,6 +419,28 @@ public class PacketManager {
         
         wire.setAvailable(true);
         
+        // If a massive packet enters through an input port, morph that input port's shape kind
+        try {
+            if (packet instanceof MassivePacket && wire.getDest() != null && wire.getDest().getType() == model.entity.ports.PortType.INPUT) {
+                java.util.Random rng = new java.util.Random();
+                double r = rng.nextDouble();
+                model.entity.ports.Port.ShapeKind newKind;
+                if (r < 1.0 / 3.0) {
+                    newKind = model.entity.ports.Port.ShapeKind.SQUARE;
+                } else if (r < 2.0 / 3.0) {
+                    newKind = model.entity.ports.Port.ShapeKind.TRIANGLE;
+                } else {
+                    newKind = model.entity.ports.Port.ShapeKind.HEXAGON;
+                }
+                wire.getDest().setShapeKind(newKind);
+                java.lang.System.out.println("🔄 INPUT PORT MORPHED by MASSIVE packet at port " + wire.getDest().getId() + " → " + newKind);
+                // Update visuals to match new shape
+                refreshInputPortViewVisual(wire.getDest());
+            }
+        } catch (Throwable t) {
+            // Fail-safe: do not interrupt delivery if morphing fails
+        }
+        
         model.entity.systems.System destinationSystem = wire.getDest().getSystem();
         
         deliverToDestinationSystem(packet, destinationSystem);
@@ -377,6 +469,70 @@ public class PacketManager {
                     // Ignore if view not available
                 }
             }
+        }
+    }
+
+    /**
+     * Replace the PortView node for a given input port with a new view matching its current shape kind.
+     */
+    private static void refreshInputPortViewVisual(Port inputPort) {
+        if (packetController == null || inputPort == null) return;
+        try {
+            Pane pane = packetController.getPacketLayer();
+            if (pane == null) return;
+
+            PortView oldView = null;
+            SystemView targetSystemView = null;
+            for (javafx.scene.Node node : new java.util.ArrayList<>(pane.getChildren())) {
+                if (node instanceof PortView) {
+                    PortView pv = (PortView) node;
+                    if (pv.getModelPort() == inputPort) {
+                        oldView = pv;
+                    }
+                } else if (node instanceof SystemView) {
+                    SystemView sv = (SystemView) node;
+                    if (sv.getSystem() == inputPort.getSystem()) {
+                        targetSystemView = sv;
+                    }
+                }
+            }
+
+            double x = 0.0, y = 0.0;
+            if (oldView != null) {
+                x = oldView.getLayoutX();
+                y = oldView.getLayoutY();
+                pane.getChildren().remove(oldView);
+            }
+
+            boolean isInput = inputPort.getType() == model.entity.ports.PortType.INPUT;
+            PortView newView;
+            switch (inputPort.getShapeKind()) {
+                case SQUARE:
+                    newView = new SquarePortView(inputPort, isInput);
+                    break;
+                case TRIANGLE:
+                    newView = new TrianglePortView(inputPort, isInput);
+                    break;
+                case HEXAGON:
+                default:
+                    newView = new HexagonPortView(inputPort, isInput);
+                    break;
+            }
+            newView.setLayoutX(x);
+            newView.setLayoutY(y);
+            pane.getChildren().add(newView);
+
+            if (targetSystemView != null) {
+                java.util.List<PortView> inputs = targetSystemView.getInputPortViews();
+                for (int i = 0; i < inputs.size(); i++) {
+                    if (inputs.get(i).getModelPort() == inputPort) {
+                        inputs.set(i, newView);
+                        break;
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            // Ignore failures in visual replacement
         }
     }
 
@@ -487,6 +643,52 @@ public class PacketManager {
             // Hide the packet visually since it's in internal storage
             if (packetController != null) {
                 packetController.hidePacket(packet);
+            }
+            
+        } else if (destinationSystem instanceof model.entity.systems.DistributorSystem) {
+            model.entity.systems.DistributorSystem distributorSystem = (model.entity.systems.DistributorSystem) destinationSystem;
+            manager.systems.DistributorSystemManager manager =
+                new manager.systems.DistributorSystemManager(distributorSystem);
+            
+            // Move packet to system center position
+            packet.setPosition(distributorSystem.getPosition());
+            
+            // Hide all packets entering the distributor (they're stored in FIFO queue)
+            if (packetController != null) {
+                packetController.hidePacket(packet);
+            }
+            
+            // Process the packet (will be forwarded when ports are available)
+            manager.receivePacket(packet);
+            
+            // Only remove massive packets from level (they get split)
+            // Non-massive packets stay in level but hidden
+            if (packet instanceof MassivePacket && level != null) {
+                level.removePacket(packet);
+            }
+            
+        } else if (destinationSystem instanceof model.entity.systems.MergeSystem) {
+            model.entity.systems.MergeSystem mergeSystem = (model.entity.systems.MergeSystem) destinationSystem;
+            manager.systems.MergeSystemManager manager =
+                new manager.systems.MergeSystemManager(mergeSystem);
+            manager.receivePacket(packet);
+
+            // Update MergeSystemView labels immediately after storage change
+            if (packetController != null) {
+                try {
+                    Pane pane = packetController.getPacketLayer();
+                    if (pane != null) {
+                        for (javafx.scene.Node node : pane.getChildren()) {
+                            if (node instanceof MergeSystemView) {
+                                MergeSystemView msv = (MergeSystemView) node;
+                                if (msv.getMergeSystem() == mergeSystem) {
+                                    manager.updateView(msv);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {}
             }
             
         } else if (destinationSystem instanceof model.entity.systems.EndSystem) {

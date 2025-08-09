@@ -15,6 +15,27 @@ public abstract class MassivePacket extends Packet {
         super(id, type, coinValue, position, direction, health);
     }
 
+    /**
+     * Split this massive packet into bit packets.
+     * Type1 → 8 circle bits (size=1), Type2 → 10 rect bits (size=1)
+     */
+    public java.util.List<Packet> splitIntoBits() {
+        java.util.List<Packet> bits = new java.util.ArrayList<>();
+        int count = (getType() == PacketType.MASSIVE_TYPE1) ? 8 : 10;
+        boolean circleBits = (getType() == PacketType.MASSIVE_TYPE1);
+        for (int i = 0; i < count; i++) {
+            Packet bit;
+            if (circleBits) {
+                bit = new model.entity.packets.bits.BitCirclePacket(getId()+"-b"+i, getPosition(), getDirection());
+            } else {
+                bit = new model.entity.packets.bits.BitRectPacket(getId()+"-b"+i, getPosition(), getDirection());
+            }
+            bit.setBitFragment(true);
+            bits.add(bit);
+        }
+        return bits;
+    }
+
     @Override
     public Shape getCollisionShape() {
         // Circle collision matching visual representation
@@ -40,7 +61,10 @@ public abstract class MassivePacket extends Packet {
         public void updateMovement(double deltaTimeSeconds, boolean compatiblePort) {
             super.updateMovement(deltaTimeSeconds, compatiblePort);
             // Accelerate only if the wire is curved (has bend points). Otherwise, keep constant speed.
-            if (getCurrentWire() != null && getCurrentWire().hasBendPoints()) {
+            if (isAergiaFrozenActive()) {
+                double frozen = getAergiaFrozenSpeedOrNegative();
+                if (frozen >= 0.0) currentSpeed = frozen;
+            } else if (getCurrentWire() != null && getCurrentWire().hasBendPoints()) {
                 currentSpeed += ACCELERATION * deltaTimeSeconds;
                 if (currentSpeed > MAX_SPEED) currentSpeed = MAX_SPEED;
             } else {

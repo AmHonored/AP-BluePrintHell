@@ -1,0 +1,35 @@
+# Maven build output
+/target/
+
+# Maven wrapper jar (but keep wrapper scripts if present)
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE settings
+/.idea/
+*.iml
+/out/
+/.project
+/.classpath
+/.settings/
+
+# VS Code
+/.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Java artifacts
+*.class
+*.jar
+*.war
+*.ear
+
+# Local archives/vendor bundles
+/javafx-sdk.zip
+
+# Runtime/save data
+/saves/

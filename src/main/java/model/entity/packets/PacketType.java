@@ -9,4 +9,6 @@ public enum PacketType {
     CONFIDENTIAL_TYPE2,
     MASSIVE_TYPE1,
     MASSIVE_TYPE2,
+    BIT_CIRCLE,
+    BIT_RECT,
 }

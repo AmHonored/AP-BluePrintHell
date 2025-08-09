@@ -2,7 +2,7 @@ package view.game;
 
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.StackPane;
+// import javafx.scene.layout.StackPane; // not used
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.geometry.Pos;
@@ -15,6 +15,7 @@ public class HUDScene extends VBox {
     private final StatsBox lossBox;
     private final StatsBox coinsBox;
     private final StatsBox packetsBox;
+    private final javafx.scene.control.Button aergiaButton;
     private final Button toggleHudButton;
     private final TemporalProgress temporalProgress;
     private final HBox statsContainer;
@@ -73,10 +74,16 @@ public class HUDScene extends VBox {
         // Set up toggle functionality
         toggleHudButton.setOnAction(e -> toggleHudVisibility());
 
+        // Aergia button (moved from bottom bar)
+        aergiaButton = new Button("Aergia (0)");
+        aergiaButton.getStyleClass().addAll("button", "aergia-button");
+        aergiaButton.setPrefWidth(120);
+
         // Button container for centering
-        StackPane buttonContainer = new StackPane();
+        HBox buttonContainer = new HBox();
         buttonContainer.setAlignment(Pos.CENTER);
-        buttonContainer.getChildren().add(toggleHudButton);
+        buttonContainer.setSpacing(20);
+        buttonContainer.getChildren().addAll(toggleHudButton, aergiaButton);
 
         // Add all components to the main VBox
         this.getChildren().addAll(statsContainer, buttonContainer);
@@ -138,4 +145,5 @@ public class HUDScene extends VBox {
     public StatsBox getPacketsBox() { return packetsBox; }
     public Button getHideHudButton() { return toggleHudButton; }
     public TemporalProgress getTemporalProgress() { return temporalProgress; }
+    public Button getAergiaButton() { return aergiaButton; }
 }

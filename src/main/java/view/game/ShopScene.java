@@ -1,7 +1,9 @@
 package view.game;
 
 import javafx.geometry.Pos;
-import javafx.scene.layout.HBox;
+// import javafx.scene.layout.HBox; // replaced with TilePane
+import javafx.scene.layout.TilePane;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Button;
@@ -15,7 +17,9 @@ public class ShopScene extends VBox {
     private final ShopManager shopManager;
     private final Level level;
     private final Label coinsLabel;
-    private final HBox itemsBox;
+    private final TilePane itemsGrid;
+    private final ScrollPane scrollPane;
+    private Runnable onItemsChanged;
     private final Button closeButton;
 
     public ShopScene(ShopManager shopManager, Level level) {
@@ -33,8 +37,22 @@ public class ShopScene extends VBox {
         coinsLabel = new Label("Coins: " + level.getCoins());
         coinsLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #00d4ff; -fx-padding: 0 0 20 0;");
 
-        itemsBox = new HBox(40);
-        itemsBox.setAlignment(Pos.CENTER);
+        // Grid of items: 3 per row, vertical scrolling
+        itemsGrid = new TilePane();
+        itemsGrid.setHgap(30);
+        itemsGrid.setVgap(30);
+        itemsGrid.setPrefColumns(3);
+        itemsGrid.setTileAlignment(Pos.CENTER);
+        itemsGrid.setAlignment(Pos.TOP_CENTER);
+
+        // Vertical scroll pane wrapping the grid
+        scrollPane = new ScrollPane(itemsGrid);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPannable(true);
+        scrollPane.setPrefViewportHeight(380);
+        scrollPane.getStyleClass().add("shop-scroll-pane");
 
         closeButton = new Button("Close");
         closeButton.setPrefWidth(140);
@@ -43,24 +61,31 @@ public class ShopScene extends VBox {
         closeButton.setOnMouseExited(e -> closeButton.setStyle("-fx-font-size: 20px; -fx-background-radius: 12; -fx-background-color: linear-gradient(to bottom, #e94560, #a34242); -fx-text-fill: #fff; -fx-font-weight: bold; -fx-border-color: #e94560; -fx-border-width: 2; -fx-effect: dropshadow(gaussian, #e94560, 8, 0.5, 0, 2); -fx-padding: 10 0 10 0; -fx-margin-top: 30px;"));
         VBox.setMargin(closeButton, new javafx.geometry.Insets(30, 0, 0, 0));
 
-        this.getChildren().addAll(title, coinsLabel, itemsBox, closeButton);
+        this.getChildren().addAll(title, coinsLabel, scrollPane, closeButton);
         refreshItems();
     }
 
     private void refreshItems() {
-        itemsBox.getChildren().clear();
+        itemsGrid.getChildren().clear();
         List<ShopItem> items = shopManager.getItems();
         for (ShopItem item : items) {
             ShopItemView itemView = new ShopItemView(item);
             itemView.getBuyButton().setOnAction(e -> {
                 if (shopManager.purchase(item)) {
                     coinsLabel.setText("Coins: " + level.getCoins());
+                    if (onItemsChanged != null) {
+                        onItemsChanged.run();
+                    }
                     refreshItems();
                 }
             });
-            itemsBox.getChildren().add(itemView);
+            itemsGrid.getChildren().add(itemView);
         }
     }
 
     public Button getCloseButton() { return closeButton; }
+
+    public void setOnItemsChanged(Runnable onItemsChanged) {
+        this.onItemsChanged = onItemsChanged;
+    }
 }

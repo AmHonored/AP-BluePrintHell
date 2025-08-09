@@ -75,6 +75,11 @@ public class ProtectedPacket extends Packet {
         super.updateMovement(deltaTimeSeconds, compatiblePort);
         
         // Update speed based on inherited movement pattern
+        if (isAergiaFrozenActive()) {
+            double frozen = getAergiaFrozenSpeedOrNegative();
+            if (frozen >= 0.0) currentSpeed = frozen;
+            return;
+        }
         switch (inheritedMovement) {
             case SQUARE:
                 updateSquareMovement(compatiblePort);

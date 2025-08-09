@@ -8,6 +8,7 @@ import model.levels.Level4;
 import model.levels.Level5;
 import model.levels.Level6;
 import model.levels.Level7;
+import model.levels.Level9;
 import view.components.levels.LevelView;
 import view.components.levels.Level1View;
 import view.components.levels.Level2View;
@@ -16,6 +17,7 @@ import view.components.levels.Level4View;
 import view.components.levels.Level5View;
 import view.components.levels.Level6View;
 import view.components.levels.Level7View;
+import view.components.levels.Level9View;
 import controller.GameController;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -72,6 +74,10 @@ public class LevelManager {
                 return new Level6();
             case 7:
                 return new Level7();
+            case 8:
+                return new model.levels.Level8();
+            case 9:
+                return new Level9();
             default:
                 throw new IllegalArgumentException("Unknown level number: " + levelNumber);
         }
@@ -99,6 +105,10 @@ public class LevelManager {
                 return new Level6View(level, visualManager);
             case 7:
                 return new Level7View(level, visualManager);
+            case 8:
+                return new view.components.levels.Level8View(level, visualManager);
+            case 9:
+                return new Level9View(level, visualManager);
             default:
                 throw new IllegalArgumentException("Unknown level number: " + levelNumber);
         }
