@@ -48,6 +48,16 @@ public class GameController {
     // Aergia placement state
     private boolean awaitingAergiaPlacement = false;
     private final java.util.List<AergiaMarkVisual> activeAergiaVisuals = new java.util.ArrayList<>();
+    // Eliphas placement state
+    private boolean awaitingEliphasPlacement = false;
+    private final java.util.List<AergiaMarkVisual> activeEliphasVisuals = new java.util.ArrayList<>();
+    
+    // Sisyphus system movement state
+    private boolean awaitingSisyphusSystemSelection = false;
+    private boolean isDraggingSystemForSisyphus = false;
+    private model.entity.systems.System selectedSystem = null;
+    private javafx.geometry.Point2D originalSystemPosition = null;
+    private view.components.systems.SystemView selectedSystemView = null;
     
     // Helper class to track visual cross marks and their associated data
     private static class AergiaMarkVisual {
@@ -142,8 +152,17 @@ public class GameController {
             wireController.setHUD(hud);
         }
         
-        // Setup connection change callback
-        wireController.setConnectionChangeCallback(() -> updateSystemIndicators());
+        // Setup connection change callback: update indicators and play button state
+        wireController.setConnectionChangeCallback(() -> {
+            updateSystemIndicators();
+            // Also try to update start button states if the view supports it
+            if (levelView != null) {
+                try {
+                    java.lang.reflect.Method method = levelView.getClass().getMethod("setupStartSystemPlayButtons", GameController.class);
+                    method.invoke(levelView, this);
+                } catch (Exception ignored) {}
+            }
+        });
         
         // Setup bend point callbacks on existing wires
         wireController.setupExistingWireBendCallbacks();
@@ -162,14 +181,7 @@ public class GameController {
                 java.lang.reflect.Method method = levelView.getClass().getMethod("updateSystemIndicators");
                 method.invoke(levelView);
             } catch (Exception e) {
-                // Fallback: handle specific level types
-                if (levelView instanceof view.components.levels.Level1View) {
-                    ((view.components.levels.Level1View) levelView).updateSystemIndicators();
-                } else if (levelView instanceof view.components.levels.Level2View) {
-                    ((view.components.levels.Level2View) levelView).updateSystemIndicators();
-                } else if (levelView instanceof view.components.levels.Level4View) {
-                    ((view.components.levels.Level4View) levelView).updateSystemIndicators();
-                }
+                // No-op: generic method may not exist on all views
             }
         }
     }
@@ -186,14 +198,7 @@ public class GameController {
                 java.lang.reflect.Method method = levelView.getClass().getMethod("setupStartSystemPlayButtons", GameController.class);
                 method.invoke(levelView, this);
             } catch (Exception e) {
-                // Fallback: handle specific level types
-                if (levelView instanceof view.components.levels.Level1View) {
-                    ((view.components.levels.Level1View) levelView).setupStartSystemPlayButtons(this);
-                } else if (levelView instanceof view.components.levels.Level2View) {
-                    ((view.components.levels.Level2View) levelView).setupStartSystemPlayButtons(this);
-                } else if (levelView instanceof view.components.levels.Level4View) {
-                    ((view.components.levels.Level4View) levelView).setupStartSystemPlayButtons(this);
-                }
+                // No-op: generic method may not exist on all views
             }
         }
     }
@@ -210,17 +215,14 @@ public class GameController {
                 java.lang.reflect.Method method = levelView.getClass().getMethod("setupWireControllerForPorts", WireController.class);
                 method.invoke(levelView, wireController);
             } catch (Exception e) {
-                // Fallback: handle specific level types
-                if (levelView instanceof view.components.levels.Level1View) {
-                    ((view.components.levels.Level1View) levelView).setupWireControllerForPorts(wireController);
-                } else if (levelView instanceof view.components.levels.Level2View) {
-                    ((view.components.levels.Level2View) levelView).setupWireControllerForPorts(wireController);
-                }
+                // No-op: generic method may not exist on all views
             }
             
             // Setup wire dragging events on the game pane
             setupWireDraggingEvents();
         setupAergiaPlacementHandler();
+        setupSisyphusMovementHandler();
+        setupEliphasPlacementHandler();
         }
     }
 
@@ -294,6 +296,52 @@ public class GameController {
             e.consume();
         });
     }
+
+    private void setupEliphasPlacementHandler() {
+        Pane pane = (gameScene != null) ? gameScene.getGamePane() : (levelView != null ? levelView.getGamePane() : null);
+        if (pane == null) return;
+        pane.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
+            if (!awaitingEliphasPlacement) return;
+            javafx.geometry.Point2D local = pane.sceneToLocal(e.getSceneX(), e.getSceneY());
+            Wire chosenWire = null;
+            double chosenT = 0.0;
+            double bestDistance = Double.MAX_VALUE;
+            double tolerancePx = 16.0;
+            for (model.wire.Wire w : connectionManager.getWires()) {
+                if (w == null || !w.isActive()) continue;
+                double tCandidate = model.logic.Shop.AergiaLogic.findClosestProgress(w, local);
+                javafx.geometry.Point2D posOnWire = w.getPositionAtProgress(tCandidate);
+                double d = posOnWire.distance(local);
+                if (d < bestDistance) {
+                    bestDistance = d;
+                    chosenWire = w;
+                    chosenT = tCandidate;
+                }
+            }
+            if (chosenWire == null || bestDistance > tolerancePx) return;
+            model.logic.Shop.EliphasLogic.addMark(level, chosenWire, chosenT);
+            level.addEliphasScrolls(-1);
+            javafx.geometry.Point2D p = chosenWire.getPositionAtProgress(chosenT);
+            Text cross = new Text("❌");
+            cross.setStyle("-fx-font-size: 20px; -fx-fill: #00d4ff; -fx-effect: dropshadow(gaussian, rgba(0,212,255,0.7), 8, 0.6, 0, 0);");
+            cross.setX(p.getX() - 6);
+            cross.setY(p.getY() + 6);
+            pane.getChildren().add(cross);
+            long removeTime = java.lang.System.nanoTime() + 30_000_000_000L; // 30 seconds
+            AergiaMarkVisual visual = new AergiaMarkVisual(cross, chosenWire, chosenT, removeTime);
+            activeEliphasVisuals.add(visual);
+            javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(30));
+            delay.setOnFinished(ev -> {
+                pane.getChildren().remove(cross);
+                activeEliphasVisuals.remove(visual);
+            });
+            delay.play();
+            awaitingEliphasPlacement = false;
+            HUDScene currentHud = getHUDScene();
+            if (currentHud != null) updateEliphasHudButtonEnabled(currentHud);
+            e.consume();
+        });
+    }
     
     /**
      * Setup wire dragging events on the game pane
@@ -364,8 +412,9 @@ public class GameController {
                     // Update UI
                     uiController.updateHUD();
                     
-                    // Update cross mark positions to follow wire changes
-                    updateAergiaMarkPositions();
+            // Update cross mark positions to follow wire changes
+            updateAergiaMarkPositions();
+            updateEliphasMarkPositions();
                     
                     // Check game over condition
                     checkGameOver();
@@ -497,6 +546,38 @@ public class GameController {
                         java.lang.System.out.println("DEBUG: Aergia placement NOT activated - conditions not met");
                     }
                 });
+                
+                // Sisyphus button handler
+                updateSisyphusHudButtonEnabled(hud);
+                hud.getSisyphusButton().setOnAction(e -> {
+                    service.AudioManager.playButtonClick();
+                    
+                    System.out.println("DEBUG: Sisyphus button clicked!");
+                    System.out.println("DEBUG: - scrolls: " + level.getSisyphusScrolls());
+                    
+                    updateSisyphusHudButtonEnabled(hud);
+                    if (level.getSisyphusScrolls() > 0) {
+                        awaitingSisyphusSystemSelection = true;
+                        selectedSystem = null;
+                        originalSystemPosition = null;
+                        System.out.println("DEBUG: Sisyphus system selection mode activated - click on a non-reference system to select it");
+                    } else {
+                        System.out.println("DEBUG: Sisyphus selection NOT activated - no scrolls available");
+                    }
+                });
+
+                // Eliphas button handler
+                updateEliphasHudButtonEnabled(hud);
+                if (hud.getEliphasButton() != null) {
+                    hud.getEliphasButton().setOnAction(e -> {
+                        service.AudioManager.playButtonClick();
+                        updateEliphasHudButtonEnabled(hud);
+                        if (level.getEliphasScrolls() > 0) {
+                            awaitingEliphasPlacement = true;
+                            System.out.println("DEBUG: Eliphas placement mode activated - click on an active wire to place mark");
+                        }
+                    });
+                }
             }
         } else {
             System.out.println("DEBUG: GameController.setupEventHandlers - buttons is null!");
@@ -557,6 +638,219 @@ public class GameController {
         for (model.wire.Wire wire : connectionManager.getWires()) {
             java.lang.System.out.println("DEBUG:   - Wire " + wire.getId() + ": active=" + wire.isActive());
         }
+    }
+
+    private void updateEliphasHudButtonEnabled(HUDScene hud) {
+        boolean enabled = level.getEliphasScrolls() > 0;
+        if (hud.getEliphasButton() != null) {
+            String text = "Eliphas (" + level.getEliphasScrolls() + ")";
+            hud.getEliphasButton().setText(text);
+            hud.getEliphasButton().setDisable(!enabled);
+        }
+    }
+
+    private void setupSisyphusMovementHandler() {
+        Pane pane = (gameScene != null) ? gameScene.getGamePane() : (levelView != null ? levelView.getGamePane() : null);
+        if (pane == null) return;
+        // Click to select a system, drag to position, release to apply
+        pane.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
+            System.out.println("DEBUG: Mouse clicked in game pane - awaitingSisyphusSystemSelection: " + awaitingSisyphusSystemSelection);
+            if (!awaitingSisyphusSystemSelection) return;
+            
+            javafx.geometry.Point2D local = pane.sceneToLocal(e.getSceneX(), e.getSceneY());
+            
+            // Select a system if none selected yet
+            if (selectedSystem == null) {
+                model.entity.systems.System clickedSystem = findSystemAtPosition(local);
+                if (clickedSystem != null && clickedSystem.isDraggableWithSisyphus() && model.logic.Shop.SisyphusLogic.canMoveSystem(clickedSystem)) {
+                    selectedSystem = clickedSystem;
+                    originalSystemPosition = clickedSystem.getPosition();
+                    selectedSystemView = findSystemViewFor(clickedSystem);
+                    isDraggingSystemForSisyphus = true;
+                    System.out.println("DEBUG: Sisyphus - drag start for " + clickedSystem.getType() + " at " + originalSystemPosition);
+                }
+            } else {
+                isDraggingSystemForSisyphus = true;
+            }
+        });
+
+        pane.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
+            if (!awaitingSisyphusSystemSelection || !isDraggingSystemForSisyphus || selectedSystem == null) return;
+            javafx.geometry.Point2D local = pane.sceneToLocal(e.getSceneX(), e.getSceneY());
+            // For responsiveness, preview movement visually (without committing wire length)
+            // Only update the view; actual commit happens on release after validation
+            if (selectedSystemView == null) {
+                selectedSystemView = findSystemViewFor(selectedSystem);
+            }
+            if (selectedSystemView != null) {
+                double w = view.components.systems.SystemView.SYSTEM_WIDTH;
+                double h = view.components.systems.SystemView.SYSTEM_HEIGHT;
+                selectedSystemView.setLayoutX(local.getX() - w / 2.0);
+                selectedSystemView.setLayoutY(local.getY() - h / 2.0);
+                // Also preview port views based on delta from original position
+                javafx.geometry.Point2D delta = local.subtract(originalSystemPosition);
+                previewPortViewsForSystem(selectedSystem, delta);
+            }
+            System.out.println("DEBUG: Sisyphus dragging preview to " + local);
+            e.consume();
+        });
+
+        pane.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
+            if (!awaitingSisyphusSystemSelection || selectedSystem == null) return;
+            javafx.geometry.Point2D local = pane.sceneToLocal(e.getSceneX(), e.getSceneY());
+            // Ensure model is at original position before validation/commit
+            selectedSystem.setPosition(originalSystemPosition);
+            if (selectedSystemView != null) selectedSystemView.updatePosition();
+            boolean moved = model.logic.Shop.SisyphusLogic.moveSystem(level, selectedSystem, local);
+            if (moved) {
+                System.out.println("DEBUG: System moved successfully via Sisyphus drag");
+                level.addSisyphusScrolls(-1);
+                System.out.println("DEBUG: Consumed 1 Sisyphus scroll - remaining: " + level.getSisyphusScrolls());
+                if (selectedSystemView != null) selectedSystemView.updatePosition();
+                // After committing, sync all port views to the model's updated port positions
+                updatePortViewsForSystem(selectedSystem);
+                // Refresh all wire views so geometry follows new endpoints
+                safeRefreshAllWireViews();
+                // Update HUD button label and disabled state after consuming one scroll
+                HUDScene currentHud = getHUDScene();
+                if (currentHud != null) updateSisyphusHudButtonEnabled(currentHud);
+            } else {
+                System.out.println("DEBUG: System movement failed - reverting position");
+                selectedSystem.setPosition(originalSystemPosition);
+                if (selectedSystemView != null) selectedSystemView.updatePosition();
+                // Also ensure ports visually remain at original model positions
+                updatePortViewsForSystem(selectedSystem);
+                safeRefreshAllWireViews();
+            }
+
+            // Reset state
+            selectedSystem = null;
+            originalSystemPosition = null;
+            selectedSystemView = null;
+            isDraggingSystemForSisyphus = false;
+            awaitingSisyphusSystemSelection = false;
+
+            // Update HUD
+            HUDScene currentHud = getHUDScene();
+            if (currentHud != null) updateSisyphusHudButtonEnabled(currentHud);
+            if (gameScene != null) gameScene.updateSisyphusButtonText();
+            e.consume();
+        });
+    }
+
+    /**
+     * Refresh wire visuals without introducing a hard compile-time dependency on WireView.
+     */
+    private void safeRefreshAllWireViews() {
+        java.util.List<model.wire.Wire> wires = connectionManager.getWires();
+        if (wires == null || wires.isEmpty()) return;
+        try {
+            Class<?> wireViewClass = Class.forName("view.components.wires.WireView");
+            java.lang.reflect.Method refresh = wireViewClass.getMethod("refresh", model.wire.Wire.class);
+            for (model.wire.Wire wire : wires) {
+                try {
+                    refresh.invoke(null, wire);
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable ignored) {
+            // If the class or method is not present, silently skip
+        }
+    }
+
+    private view.components.systems.SystemView findSystemViewFor(model.entity.systems.System system) {
+        Pane pane = (gameScene != null) ? gameScene.getGamePane() : (levelView != null ? levelView.getGamePane() : null);
+        if (pane == null) return null;
+        for (javafx.scene.Node node : pane.getChildren()) {
+            if (node instanceof view.components.systems.SystemView) {
+                view.components.systems.SystemView sv = (view.components.systems.SystemView) node;
+                if (sv.getSystem() == system) return sv;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Update all PortView nodes that belong to the given system so their layout reflects
+     * the underlying model `Port` positions. This is needed after Sisyphus commits the move.
+     */
+    private void updatePortViewsForSystem(model.entity.systems.System system) {
+        Pane pane = (gameScene != null) ? gameScene.getGamePane() : (levelView != null ? levelView.getGamePane() : null);
+        if (pane == null) return;
+
+        java.util.Set<model.entity.ports.Port> systemPorts = new java.util.HashSet<>();
+        systemPorts.addAll(system.getInPorts());
+        systemPorts.addAll(system.getOutPorts());
+
+        for (javafx.scene.Node node : pane.getChildren()) {
+            if (node instanceof view.components.ports.PortView) {
+                view.components.ports.PortView pv = (view.components.ports.PortView) node;
+                model.entity.ports.Port modelPort = pv.getModelPort();
+                if (systemPorts.contains(modelPort)) {
+                    double size = getPortVisualSize(pv);
+                    javafx.geometry.Point2D p = modelPort.getPosition();
+                    pv.setLayoutX(p.getX() - size / 2.0);
+                    pv.setLayoutY(p.getY() - size / 2.0);
+                }
+            }
+        }
+    }
+
+    private double getPortVisualSize(view.components.ports.PortView pv) {
+        if (pv instanceof view.components.ports.TrianglePortView) return 15.0;
+        // Keep default consistent with Level views (square/hexagon)
+        return 10.0;
+    }
+
+    /**
+     * Preview move of port views by applying a temporary delta to their positions.
+     * The underlying model positions are not changed here.
+     */
+    private void previewPortViewsForSystem(model.entity.systems.System system, javafx.geometry.Point2D delta) {
+        Pane pane = (gameScene != null) ? gameScene.getGamePane() : (levelView != null ? levelView.getGamePane() : null);
+        if (pane == null) return;
+        java.util.Set<model.entity.ports.Port> systemPorts = new java.util.HashSet<>();
+        systemPorts.addAll(system.getInPorts());
+        systemPorts.addAll(system.getOutPorts());
+        for (javafx.scene.Node node : pane.getChildren()) {
+            if (node instanceof view.components.ports.PortView) {
+                view.components.ports.PortView pv = (view.components.ports.PortView) node;
+                model.entity.ports.Port modelPort = pv.getModelPort();
+                if (systemPorts.contains(modelPort)) {
+                    double size = getPortVisualSize(pv);
+                    javafx.geometry.Point2D p = modelPort.getPosition().add(delta);
+                    pv.setLayoutX(p.getX() - size / 2.0);
+                    pv.setLayoutY(p.getY() - size / 2.0);
+                }
+            }
+        }
+    }
+    
+    private model.entity.systems.System findSystemAtPosition(javafx.geometry.Point2D position) {
+        for (model.entity.systems.System system : level.getSystems()) {
+            javafx.geometry.Point2D systemPos = system.getPosition();
+            double width = model.entity.systems.System.WIDTH;
+            double height = model.entity.systems.System.HEIGHT;
+            
+            // Check if click is within system bounds
+            if (position.getX() >= systemPos.getX() - width/2 && 
+                position.getX() <= systemPos.getX() + width/2 &&
+                position.getY() >= systemPos.getY() - height/2 && 
+                position.getY() <= systemPos.getY() + height/2) {
+                return system;
+            }
+        }
+        return null;
+    }
+    
+    private void updateSisyphusHudButtonEnabled(HUDScene hud) {
+        boolean enabled = level.getSisyphusScrolls() > 0;
+        // Update label to reflect current capacity
+        String sisyphusText = "Sisyphus (" + level.getSisyphusScrolls() + ")";
+        hud.getSisyphusButton().setText(sisyphusText);
+        hud.getSisyphusButton().setDisable(!enabled);
+
+        System.out.println("DEBUG: updateSisyphusHudButtonEnabled - scrolls: " + level.getSisyphusScrolls() +
+            ", enabled: " + enabled);
     }
 
     /**
@@ -718,6 +1012,8 @@ public class GameController {
         if (currentHud != null) {
             // Prune expired marks and refresh cooldown state
             model.logic.Shop.AergiaLogic.pruneExpiredMarks(level);
+            // Prune expired Eliphas marks
+            model.logic.Shop.EliphasLogic.pruneExpiredMarks(level);
 
             // Update label depending on context
             if (gameScene != null) {
@@ -735,6 +1031,7 @@ public class GameController {
 
             // Update enabled/disabled each HUD tick so it re-enables as soon as cooldown ends
             updateAergiaHudButtonEnabled(currentHud);
+            updateEliphasHudButtonEnabled(currentHud);
 
             boolean hasActiveWires = connectionManager.getWires().stream().anyMatch(wire -> wire.isActive());
             boolean onCooldown = level.isAergiaOnCooldown();
@@ -849,6 +1146,35 @@ public class GameController {
         
         // Update positions of remaining visuals
         for (AergiaMarkVisual visual : activeAergiaVisuals) {
+            if (visual.wire != null) {
+                javafx.geometry.Point2D newPos = visual.wire.getPositionAtProgress(visual.progress);
+                visual.crossText.setX(newPos.getX() - 6);
+                visual.crossText.setY(newPos.getY() + 6);
+            }
+        }
+    }
+
+    /**
+     * Update positions of all active Eliphas cross marks to follow wire changes
+     */
+    private void updateEliphasMarkPositions() {
+        long now = java.lang.System.nanoTime();
+        // Remove expired visuals
+        activeEliphasVisuals.removeIf(visual -> {
+            if (now >= visual.removeTime) {
+                // Remove from scene if still present
+                if (gameScene != null && gameScene.getGamePane() != null) {
+                    gameScene.getGamePane().getChildren().remove(visual.crossText);
+                } else if (levelView != null && levelView.getGamePane() != null) {
+                    levelView.getGamePane().getChildren().remove(visual.crossText);
+                }
+                return true;
+            }
+            return false;
+        });
+        
+        // Update positions of remaining visuals
+        for (AergiaMarkVisual visual : activeEliphasVisuals) {
             if (visual.wire != null) {
                 javafx.geometry.Point2D newPos = visual.wire.getPositionAtProgress(visual.progress);
                 visual.crossText.setX(newPos.getX() - 6);

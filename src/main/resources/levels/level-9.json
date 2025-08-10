@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "level-9",
+  "name": "Distribute & Merge",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 20000,
+    "initialCoins": 100,
+    "impactDisabled": false,
+    "collisionsDisabled": false
+  },
+  "systems": [
+    { "id": "start", "type": "START", "position": { "x": 120, "y": 220 },
+      "ports": [
+        { "id": "start_out1", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 160, "y": 200 } },
+        { "id": "start_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 160, "y": 220 } },
+        { "id": "start_out3", "role": "OUTPUT", "shape": "HEXAGON",  "position": { "x": 160, "y": 240 } }
+      ] },
+    { "id": "distributor", "type": "DISTRIBUTOR", "position": { "x": 320, "y": 220 },
+      "ports": [
+        { "id": "dist_in1",  "role": "INPUT",  "shape": "SQUARE",   "position": { "x": 280, "y": 200 } },
+        { "id": "dist_in2",  "role": "INPUT",  "shape": "TRIANGLE", "position": { "x": 280, "y": 220 } },
+        { "id": "dist_in3",  "role": "INPUT",  "shape": "HEXAGON",  "position": { "x": 280, "y": 240 } },
+        { "id": "dist_out1", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 360, "y": 200 } },
+        { "id": "dist_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 360, "y": 220 } },
+        { "id": "dist_out3", "role": "OUTPUT", "shape": "HEXAGON",  "position": { "x": 360, "y": 240 } }
+      ] },
+    { "id": "merge", "type": "MERGE", "position": { "x": 520, "y": 220 },
+      "ports": [
+        { "id": "merge_in1",  "role": "INPUT",  "shape": "SQUARE",   "position": { "x": 480, "y": 200 } },
+        { "id": "merge_in2",  "role": "INPUT",  "shape": "TRIANGLE", "position": { "x": 480, "y": 220 } },
+        { "id": "merge_in3",  "role": "INPUT",  "shape": "HEXAGON",  "position": { "x": 480, "y": 240 } },
+        { "id": "merge_out1", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 560, "y": 200 } },
+        { "id": "merge_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 560, "y": 220 } },
+        { "id": "merge_out3", "role": "OUTPUT", "shape": "HEXAGON",  "position": { "x": 560, "y": 240 } }
+      ] },
+    { "id": "end", "type": "END", "position": { "x": 720, "y": 220 },
+      "ports": [
+        { "id": "end_in1", "role": "INPUT", "shape": "SQUARE",   "position": { "x": 680, "y": 200 } },
+        { "id": "end_in2", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 680, "y": 220 } },
+        { "id": "end_in3", "role": "INPUT", "shape": "HEXAGON",  "position": { "x": 680, "y": 240 } }
+      ] }
+  ]
+}
+

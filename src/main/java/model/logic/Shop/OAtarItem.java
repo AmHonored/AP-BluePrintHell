@@ -16,11 +16,13 @@ public class OAtarItem implements ShopItem {
         System.out.println("DEBUG: OAtarItem.apply() - Disabling impact waves for " + getDurationSeconds() + " seconds");
         System.out.println("DEBUG: OAtarItem.apply() - Impact disabled before: " + level.isImpactDisabled());
         level.setImpactDisabled(true);
+        level.getLevelState().setImpactDisableEndNanos(java.lang.System.nanoTime() + getDurationSeconds() * 1_000_000_000L);
         System.out.println("DEBUG: OAtarItem.apply() - Impact disabled after: " + level.isImpactDisabled());
         
         PauseTransition delay = new PauseTransition(Duration.seconds(getDurationSeconds()));
         delay.setOnFinished(event -> {
             level.setImpactDisabled(false);
+            level.getLevelState().setImpactDisableEndNanos(0L);
             System.out.println("DEBUG: OAtarItem - Impact waves re-enabled after " + getDurationSeconds() + " seconds");
             System.out.println("DEBUG: OAtarItem - Impact disabled now: " + level.isImpactDisabled());
         });

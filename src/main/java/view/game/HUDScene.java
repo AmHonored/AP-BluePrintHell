@@ -16,6 +16,8 @@ public class HUDScene extends VBox {
     private final StatsBox coinsBox;
     private final StatsBox packetsBox;
     private final javafx.scene.control.Button aergiaButton;
+    private final javafx.scene.control.Button sisyphusButton;
+    private final javafx.scene.control.Button eliphasButton;
     private final Button toggleHudButton;
     private final TemporalProgress temporalProgress;
     private final HBox statsContainer;
@@ -79,11 +81,21 @@ public class HUDScene extends VBox {
         aergiaButton.getStyleClass().addAll("button", "aergia-button");
         aergiaButton.setPrefWidth(120);
 
+        // Sisyphus button
+        sisyphusButton = new Button("Sisyphus (0)");
+        sisyphusButton.getStyleClass().addAll("button", "sisyphus-button");
+        sisyphusButton.setPrefWidth(120);
+
+        // Eliphas button
+        eliphasButton = new Button("Eliphas (0)");
+        eliphasButton.getStyleClass().addAll("button", "eliphas-button");
+        eliphasButton.setPrefWidth(120);
+
         // Button container for centering
         HBox buttonContainer = new HBox();
         buttonContainer.setAlignment(Pos.CENTER);
         buttonContainer.setSpacing(20);
-        buttonContainer.getChildren().addAll(toggleHudButton, aergiaButton);
+        buttonContainer.getChildren().addAll(toggleHudButton, aergiaButton, sisyphusButton, eliphasButton);
 
         // Add all components to the main VBox
         this.getChildren().addAll(statsContainer, buttonContainer);
@@ -146,4 +158,6 @@ public class HUDScene extends VBox {
     public Button getHideHudButton() { return toggleHudButton; }
     public TemporalProgress getTemporalProgress() { return temporalProgress; }
     public Button getAergiaButton() { return aergiaButton; }
+    public Button getSisyphusButton() { return sisyphusButton; }
+    public Button getEliphasButton() { return eliphasButton; }
 }

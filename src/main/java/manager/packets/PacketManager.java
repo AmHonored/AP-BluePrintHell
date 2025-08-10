@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
 import model.levels.Level;
+import model.logic.Shop.EliphasLogic;
 import controller.PacketController;
 import javafx.scene.layout.Pane;
 import view.components.ports.PortView;
@@ -274,23 +275,23 @@ public class PacketManager {
             }
         }
         // If entering an incompatible input port, double the speed for square/triangle
-        Wire wire = packet.getCurrentWire();
-        if (wire != null && frozen < 0.0 && (packet instanceof model.entity.packets.SquarePacket || packet instanceof model.entity.packets.TrianglePacket || packet instanceof model.entity.packets.ProtectedPacket)) {
-            boolean inputCompatible = (wire.getDest() != null) && isPortCompatibleWithPacket(wire.getDest(), packet);
+        Wire currentWire = packet.getCurrentWire();
+        if (currentWire != null && frozen < 0.0 && (packet instanceof model.entity.packets.SquarePacket || packet instanceof model.entity.packets.TrianglePacket || packet instanceof model.entity.packets.ProtectedPacket)) {
+            boolean inputCompatible = (currentWire.getDest() != null) && isPortCompatibleWithPacket(currentWire.getDest(), packet);
             if (!inputCompatible) {
                 speed *= 2.0;
             }
         }
         // Apply Aergia suppression past marked points: once a packet passes
         // any active mark on this wire, freeze its speed at current value for the mark duration
-        if (wire != null && frozen < 0.0 && level != null && !level.getAergiaMarks().isEmpty()) {
+        if (currentWire != null && frozen < 0.0 && level != null && !level.getAergiaMarks().isEmpty()) {
             double progress = packet.getMovementProgress();
             long now = java.lang.System.nanoTime();
             for (model.logic.Shop.AergiaLogic.AergiaMark mark : level.getAergiaMarks()) {
-                if (mark.wire == wire && mark.effectEndNanos > now && progress >= mark.progress) {
+                if (mark.wire == currentWire && mark.effectEndNanos > now && progress >= mark.progress) {
                     packet.setAergiaFreeze(speed, mark.effectEndNanos);
                     java.lang.System.out.println("DEBUG: AERGIA MARK CROSSED (standard) → packet=" + packet.getId() +
-                        ", wire=" + wire.getId() + ", progress=" + String.format("%.3f", progress) +
+                        ", wire=" + currentWire.getId() + ", progress=" + String.format("%.3f", progress) +
                         ", speedFrozenAt=" + String.format("%.2f", speed));
                     break;
                 }
@@ -304,9 +305,28 @@ public class PacketManager {
         }
         packet.setMovementProgress(newProgress);
         Point2D newPosition = packet.getCurrentWire().getPositionAtProgress(newProgress);
-        
+
         // For standard packets, also don't add deflection during normal movement
         packet.setPosition(new Point2D(newPosition.getX(), newPosition.getY()));
+
+        // Eliphas: continuous re-centering after crossing mark on this wire
+        if (level != null && !level.getEliphasMarks().isEmpty()) {
+            long now = java.lang.System.nanoTime();
+            Wire wire = packet.getCurrentWire();
+            double progress = newProgress;
+            for (EliphasLogic.EliphasMark mark : level.getEliphasMarks()) {
+                if (mark.wire == wire && mark.effectEndNanos > now && progress >= mark.progress) {
+                    // Smoothly ease deflection back to zero to avoid tunneling
+                    double dx = packet.getDeflectedX();
+                    double dy = packet.getDeflectedY();
+                    // Apply a proportional pull toward zero each update (critical to be continuous)
+                    double k = 6.0; // higher = faster recenter; tuned for ~30fps
+                    double step = Math.min(1.0, k * deltaTimeSeconds);
+                    packet.applyDeflection(-dx * step, -dy * step);
+                    break;
+                }
+            }
+        }
     }
 
     // === Collision handling and off-wire removal ===

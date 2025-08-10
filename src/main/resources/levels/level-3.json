@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "level-3",
+  "name": "Hexagon & Ddos",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 15000,
+    "initialCoins": 100,
+    "impactDisabled": false,
+    "collisionsDisabled": false
+  },
+  "systems": [
+    { "id": "start1", "type": "START", "position": { "x": 150, "y": 120 },
+      "ports": [
+        { "id": "start1_out1", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 190, "y": 110 } },
+        { "id": "start1_out2", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 190, "y": 130 } }
+      ]
+    },
+    { "id": "start2", "type": "START", "position": { "x": 150, "y": 280 },
+      "ports": [
+        { "id": "start2_out1", "role": "OUTPUT", "shape": "HEXAGON", "position": { "x": 190, "y": 280 } }
+      ]
+    },
+    { "id": "ddos1", "type": "DDOS", "position": { "x": 400, "y": 200 },
+      "ports": [
+        { "id": "inter_in1",  "role": "INPUT",  "shape": "HEXAGON", "position": { "x": 360, "y": 180 } },
+        { "id": "inter_in2",  "role": "INPUT",  "shape": "SQUARE",  "position": { "x": 360, "y": 200 } },
+        { "id": "inter_in3",  "role": "INPUT",  "shape": "TRIANGLE","position": { "x": 360, "y": 220 } },
+        { "id": "inter_out1", "role": "OUTPUT", "shape": "TRIANGLE","position": { "x": 440, "y": 180 } },
+        { "id": "inter_out2", "role": "OUTPUT", "shape": "SQUARE",  "position": { "x": 440, "y": 200 } },
+        { "id": "inter_out3", "role": "OUTPUT", "shape": "HEXAGON", "position": { "x": 440, "y": 220 } }
+      ]
+    },
+    { "id": "end1", "type": "END", "position": { "x": 650, "y": 200 },
+      "ports": [
+        { "id": "end_in1", "role": "INPUT", "shape": "HEXAGON", "position": { "x": 610, "y": 180 } },
+        { "id": "end_in2", "role": "INPUT", "shape": "SQUARE",  "position": { "x": 610, "y": 200 } },
+        { "id": "end_in3", "role": "INPUT", "shape": "TRIANGLE","position": { "x": 610, "y": 220 } }
+      ]
+    }
+  ],
+  "nextLevelId": "level-4"
+}
+

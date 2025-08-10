@@ -67,7 +67,18 @@ public class GameScene extends StackPane {
         shopManager = new ShopManager(level);
         shopOverlay = new ShopScene(shopManager, level);
         shopOverlay.setOnItemsChanged(() -> {
+            // Refresh Aergia, Sisyphus, and Eliphas HUD buttons immediately after purchase
             updateAergiaButtonText();
+            updateSisyphusButtonText();
+            updateEliphasButtonText();
+            if (hud != null) {
+                // Sisyphus: enable if any scrolls > 0
+                boolean sisyphusEnabled = level.getSisyphusScrolls() > 0;
+                hud.getSisyphusButton().setDisable(!sisyphusEnabled);
+                // Eliphas: enable if any scrolls > 0
+                boolean eliphasEnabled = level.getEliphasScrolls() > 0;
+                hud.getEliphasButton().setDisable(!eliphasEnabled);
+            }
         });
         shopOverlay.setVisible(false);
         shopOverlay.getCloseButton().setOnAction(e -> {
@@ -120,6 +131,10 @@ public class GameScene extends StackPane {
 
         // Reflect initial Aergia count on button
         updateAergiaButtonText();
+        // Reflect initial Sisyphus count on button
+        updateSisyphusButtonText();
+        // Reflect initial Eliphas count on button
+        updateEliphasButtonText();
 
         // Start the level timer
         startLevelTimer();
@@ -133,6 +148,20 @@ public class GameScene extends StackPane {
         if (hud != null) {
             hud.getAergiaButton().setText(text);
             // Let GameController control enabled/disabled state; only update label here
+        }
+    }
+
+    public void updateSisyphusButtonText() {
+        if (hud != null) {
+            String text = "Sisyphus (" + level.getSisyphusScrolls() + ")";
+            hud.getSisyphusButton().setText(text);
+        }
+    }
+
+    public void updateEliphasButtonText() {
+        if (hud != null) {
+            String text = "Eliphas (" + level.getEliphasScrolls() + ")";
+            hud.getEliphasButton().setText(text);
         }
     }
 
@@ -209,17 +238,12 @@ public class GameScene extends StackPane {
             service.AudioManager.playButtonClick();
             goToMenu();
         });
-        // Only show next level if this is Level 1
-        boolean isLevel1 = level instanceof model.levels.Level1;
-        levelCompleteOverlay.getNextLevelButton().setVisible(isLevel1);
-        if (isLevel1) {
-            levelCompleteOverlay.getNextLevelButton().setOnAction(e -> {
-                service.AudioManager.playButtonClick();
-                goToNextLevel();
-            });
-            // Unlock Level 2
-            if (visualManager != null) visualManager.unlockLevel2();
-        }
+        // Show next level button always in config-driven flow
+        levelCompleteOverlay.getNextLevelButton().setVisible(true);
+        levelCompleteOverlay.getNextLevelButton().setOnAction(e -> {
+            service.AudioManager.playButtonClick();
+            goToNextLevel();
+        });
     }
 
     private void showGameOverOverlay() {
@@ -240,14 +264,15 @@ public class GameScene extends StackPane {
 
     private void restartLevel() {
         if (visualManager != null) {
-            int levelNum = (level instanceof model.levels.Level1) ? 1 : 2;
-            visualManager.showGame(levelNum);
+            // Delegate restart to LevelManager in config-driven flow
+            visualManager.showMenu();
         }
     }
 
     private void goToNextLevel() {
         if (visualManager != null) {
-            visualManager.showGame(2);
+            // Delegate to LevelManager's next logic via menu path
+            visualManager.showMenu();
         }
     }
 

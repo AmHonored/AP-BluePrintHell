@@ -8,6 +8,9 @@ public class LevelState {
     private int packetsCollected = 0;
     private boolean impactDisabled = false;
     private boolean collisionsDisabled = false;
+    // End times for temporary shop effects (nanoTime). 0 means no active timer
+    private long impactDisableEndNanos = 0L;
+    private long collisionsDisableEndNanos = 0L;
 
     public LevelState(int wireLength) {
         this.wireLength = wireLength;
@@ -80,4 +83,9 @@ public class LevelState {
     public boolean isCollisionsDisabled() {
         return collisionsDisabled;
     }
+
+    public long getImpactDisableEndNanos() { return impactDisableEndNanos; }
+    public void setImpactDisableEndNanos(long nanos) { this.impactDisableEndNanos = nanos; }
+    public long getCollisionsDisableEndNanos() { return collisionsDisableEndNanos; }
+    public void setCollisionsDisableEndNanos(long nanos) { this.collisionsDisableEndNanos = nanos; }
 }

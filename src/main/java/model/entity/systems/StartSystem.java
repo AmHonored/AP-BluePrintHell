@@ -47,4 +47,9 @@ public class StartSystem extends System {
         }
         return null;
     }
+
+    @Override
+    public boolean isDraggableWithSisyphus() {
+        return false;
+    }
 }

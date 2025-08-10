@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "level-6",
+  "name": "Antivirus",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 20000,
+    "initialCoins": 100,
+    "impactDisabled": false,
+    "collisionsDisabled": false
+  },
+  "systems": [
+    { "id": "start", "type": "START", "position": { "x": 120, "y": 250 },
+      "ports": [
+        { "id": "start_out1", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 160, "y": 220 } },
+        { "id": "start_out2", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 160, "y": 250 } },
+        { "id": "start_out3", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 160, "y": 280 } }
+      ] },
+    { "id": "ddos", "type": "DDOS", "position": { "x": 350, "y": 150 },
+      "ports": [
+        { "id": "ddos_in1",  "role": "INPUT",  "shape": "SQUARE", "position": { "x": 310, "y": 130 } },
+        { "id": "ddos_in2",  "role": "INPUT",  "shape": "SQUARE", "position": { "x": 310, "y": 170 } },
+        { "id": "ddos_out1", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 390, "y": 130 } },
+        { "id": "ddos_out2", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 390, "y": 170 } }
+      ] },
+    { "id": "antivirus", "type": "ANTIVIRUS", "position": { "x": 350, "y": 350 },
+      "ports": [
+        { "id": "antivirus_in",  "role": "INPUT",  "shape": "SQUARE", "position": { "x": 310, "y": 350 } },
+        { "id": "antivirus_out", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 390, "y": 350 } }
+      ] },
+    { "id": "end", "type": "END", "position": { "x": 520, "y": 250 },
+      "ports": [
+        { "id": "end_in1", "role": "INPUT", "shape": "SQUARE", "position": { "x": 480, "y": 220 } },
+        { "id": "end_in2", "role": "INPUT", "shape": "SQUARE", "position": { "x": 480, "y": 250 } },
+        { "id": "end_in3", "role": "INPUT", "shape": "SQUARE", "position": { "x": 480, "y": 280 } }
+      ] }
+  ],
+  "nextLevelId": "level-9"
+}
+

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "level-5",
+  "name": "VPN",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 2000,
+    "initialCoins": 100,
+    "impactDisabled": false,
+    "collisionsDisabled": false
+  },
+  "systems": [
+    { "id": "start", "type": "START", "position": { "x": 100, "y": 200 },
+      "ports": [
+        { "id": "start_out1", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 140, "y": 180 } },
+        { "id": "start_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 140, "y": 200 } },
+        { "id": "start_out3", "role": "OUTPUT", "shape": "HEXAGON",  "position": { "x": 140, "y": 220 } }
+      ] },
+    { "id": "vpn1", "type": "VPN", "position": { "x": 260, "y": 150 },
+      "ports": [
+        { "id": "vpn1_in1",  "role": "INPUT",  "shape": "SQUARE",  "position": { "x": 220, "y": 150 } },
+        { "id": "vpn1_out1", "role": "OUTPUT", "shape": "SQUARE",  "position": { "x": 300, "y": 150 } }
+      ] },
+    { "id": "vpn2", "type": "VPN", "position": { "x": 260, "y": 270 },
+      "ports": [
+        { "id": "vpn2_in1",  "role": "INPUT",  "shape": "TRIANGLE", "position": { "x": 220, "y": 250 } },
+        { "id": "vpn2_in2",  "role": "INPUT",  "shape": "HEXAGON",  "position": { "x": 220, "y": 290 } },
+        { "id": "vpn2_out1", "role": "OUTPUT", "shape": "TRIANGLE","position": { "x": 300, "y": 250 } },
+        { "id": "vpn2_out2", "role": "OUTPUT", "shape": "HEXAGON", "position": { "x": 300, "y": 290 } }
+      ] },
+    { "id": "ddos1", "type": "DDOS", "position": { "x": 460, "y": 200 },
+      "ports": [
+        { "id": "ddos_in1",  "role": "INPUT",  "shape": "SQUARE",   "position": { "x": 420, "y": 180 } },
+        { "id": "ddos_in2",  "role": "INPUT",  "shape": "TRIANGLE", "position": { "x": 420, "y": 200 } },
+        { "id": "ddos_in3",  "role": "INPUT",  "shape": "HEXAGON",  "position": { "x": 420, "y": 220 } },
+        { "id": "ddos_out1", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 500, "y": 180 } },
+        { "id": "ddos_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 500, "y": 200 } },
+        { "id": "ddos_out3", "role": "OUTPUT", "shape": "HEXAGON",  "position": { "x": 500, "y": 220 } }
+      ] },
+    { "id": "end", "type": "END", "position": { "x": 660, "y": 200 },
+      "ports": [
+        { "id": "end_in1", "role": "INPUT", "shape": "SQUARE",   "position": { "x": 620, "y": 180 } },
+        { "id": "end_in2", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 620, "y": 200 } },
+        { "id": "end_in3", "role": "INPUT", "shape": "HEXAGON",  "position": { "x": 620, "y": 220 } }
+      ] }
+  ],
+  "nextLevelId": "level-6"
+}
+

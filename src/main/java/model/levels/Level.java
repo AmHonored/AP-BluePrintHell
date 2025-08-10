@@ -7,6 +7,7 @@ import model.entity.packets.Packet;
 import model.logic.state.GameState;
 import model.logic.state.LevelState;
 import model.logic.Shop.AergiaLogic;
+import model.logic.Shop.EliphasLogic;
 
 public class Level {
     private final GameState gameState;
@@ -17,6 +18,13 @@ public class Level {
     private int aergiaScrolls = 0;
     private long aergiaCooldownEnd = 0L; // nanoTime
     private java.util.List<AergiaLogic.AergiaMark> aergiaMarks = new java.util.ArrayList<>();
+    
+    // Sisyphus state
+    private int sisyphusScrolls = 0;
+
+    // Eliphas state
+    private int eliphasScrolls = 0;
+    private java.util.List<EliphasLogic.EliphasMark> eliphasMarks = new java.util.ArrayList<>();
 
     public Level(int wireLength) {
         this.gameState = new GameState();
@@ -179,4 +187,14 @@ public class Level {
     public void setAergiaCooldownEnd(long nanoTime) { this.aergiaCooldownEnd = nanoTime; }
     public java.util.List<AergiaLogic.AergiaMark> getAergiaMarks() { return aergiaMarks; }
     public void setAergiaMarks(java.util.List<AergiaLogic.AergiaMark> marks) { this.aergiaMarks = marks; }
+    
+    // === Sisyphus inventory ===
+    public int getSisyphusScrolls() { return sisyphusScrolls; }
+    public void addSisyphusScrolls(int delta) { sisyphusScrolls = Math.max(0, sisyphusScrolls + delta); }
+
+    // === Eliphas inventory/marks ===
+    public int getEliphasScrolls() { return eliphasScrolls; }
+    public void addEliphasScrolls(int delta) { eliphasScrolls = Math.max(0, eliphasScrolls + delta); }
+    public java.util.List<EliphasLogic.EliphasMark> getEliphasMarks() { return eliphasMarks; }
+    public void setEliphasMarks(java.util.List<EliphasLogic.EliphasMark> marks) { this.eliphasMarks = marks; }
 } 

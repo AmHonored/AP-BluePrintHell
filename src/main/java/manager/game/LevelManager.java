@@ -1,26 +1,15 @@
 package manager.game;
 
-import model.levels.Level;
-import model.levels.Level1;
-import model.levels.Level2;
-import model.levels.Level3;
-import model.levels.Level4;
-import model.levels.Level5;
-import model.levels.Level6;
-import model.levels.Level7;
-import model.levels.Level9;
-import view.components.levels.LevelView;
-import view.components.levels.Level1View;
-import view.components.levels.Level2View;
-import view.components.levels.Level3View;
-import view.components.levels.Level4View;
-import view.components.levels.Level5View;
-import view.components.levels.Level6View;
-import view.components.levels.Level7View;
-import view.components.levels.Level9View;
+import config.levels.LevelConfigLoader;
+import config.levels.LevelDefinition;
+import config.levels.LevelFactory;
 import controller.GameController;
+import service.SaveService;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import model.levels.Level;
+import view.components.levels.DataDrivenLevelView;
+import view.components.levels.LevelView;
 
 public class LevelManager {
     private final VisualManager visualManager;
@@ -28,6 +17,11 @@ public class LevelManager {
     private final String cssFile;
     private boolean level2Unlocked = true; // Unlocked by default for testing
     private GameController currentGameController;
+    private final LevelConfigLoader configLoader = new LevelConfigLoader();
+    private final LevelFactory levelFactory = new LevelFactory();
+    private int currentLevelNumber = -1;
+    private final SaveService saveService = new SaveService();
+    private Level currentLevel;
 
     public LevelManager(VisualManager visualManager, Stage primaryStage, String cssFile) {
         this.visualManager = visualManager;
@@ -39,7 +33,18 @@ public class LevelManager {
      * Create and show a specific level
      */
     public void showLevel(int levelNumber) {
+        this.currentLevelNumber = levelNumber;
+        String levelId = "level-" + levelNumber;
         Level level = createLevel(levelNumber);
+        this.currentLevel = level;
+
+        // Load basic saved state and system positions BEFORE creating the view
+        saveService.tryLoadLevelSave("default", levelId)
+            .ifPresent(save -> {
+                saveService.applyBasicToLevel(level, save);
+                saveService.applySystemPositions(level, save);
+            });
+
         LevelView levelView = createLevelView(level, levelNumber);
         
         Scene scene = new Scene(levelView, 800, 600);
@@ -49,9 +54,27 @@ public class LevelManager {
         // Initialize game controller for the level
         currentGameController = new GameController(level, levelView, visualManager);
         
-        // Start background music for the level
+        // Transition audio: stop menu music and start background
+        service.AudioManager.stopMenuMusic();
         service.AudioManager.playBackgroundMusic();
         
+        // Start autosave every 2 seconds
+        saveService.attachAutosave(level, levelId, 2.0);
+
+        // After scene is set and pane exists, restore wires visually
+        saveService.tryLoadLevelSave("default", levelId)
+            .ifPresent(save -> {
+                try {
+                    javafx.scene.layout.Pane pane = levelView.getGamePane();
+                    saveService.restoreWires(level, save, pane);
+                    saveService.restorePackets(level, save);
+                    // Refresh indicators and enable play buttons based on restored connections
+                    if (currentGameController != null) {
+                        currentGameController.updateSystemIndicators();
+                    }
+                } catch (Throwable ignored) {}
+            });
+
         currentGameController.startGame();
     }
 
@@ -59,59 +82,22 @@ public class LevelManager {
      * Create level model based on level number
      */
     private Level createLevel(int levelNumber) {
-        switch (levelNumber) {
-            case 1:
-                return new Level1();
-            case 2:
-                return new Level2();
-            case 3:
-                return new Level3();
-            case 4:
-                return new Level4();
-            case 5:
-                return new Level5();
-            case 6:
-                return new Level6();
-            case 7:
-                return new Level7();
-            case 8:
-                return new model.levels.Level8();
-            case 9:
-                return new Level9();
-            default:
-                throw new IllegalArgumentException("Unknown level number: " + levelNumber);
-        }
+        ensureIndexLoaded();
+        String levelId = "level-" + levelNumber;
+        LevelDefinition def = configLoader.findLevelById(levelId)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown level id: " + levelId));
+        return levelFactory.createLevel(def);
     }
 
     /**
      * Create level view based on level number
      */
     private LevelView createLevelView(Level level, int levelNumber) {
-        switch (levelNumber) {
-            case 1:
-                return new Level1View(level, visualManager);
-            case 2:
-                if (!level2Unlocked) {
-                    throw new IllegalStateException("Level 2 is not unlocked yet");
-                }
-                return new Level2View(level, visualManager);
-            case 3:
-                return new Level3View(level, visualManager);
-            case 4:
-                return new Level4View(level, visualManager);
-            case 5:
-                return new Level5View(level, visualManager);
-            case 6:
-                return new Level6View(level, visualManager);
-            case 7:
-                return new Level7View(level, visualManager);
-            case 8:
-                return new view.components.levels.Level8View(level, visualManager);
-            case 9:
-                return new Level9View(level, visualManager);
-            default:
-                throw new IllegalArgumentException("Unknown level number: " + levelNumber);
-        }
+        ensureIndexLoaded();
+        String levelId = "level-" + levelNumber;
+        LevelDefinition def = configLoader.findLevelById(levelId)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown level id: " + levelId));
+        return new DataDrivenLevelView(level, visualManager, def);
     }
 
     /**
@@ -119,21 +105,17 @@ public class LevelManager {
      */
     public void restartCurrentLevel() {
         if (currentGameController != null) {
+            // Save before stopping and restarting
+            if (currentLevelNumber > 0 && currentLevel != null) {
+                saveService.saveNow(currentLevel, "default", "level-" + currentLevelNumber);
+            }
+            saveService.stopAutosave();
             currentGameController.stopGame();
         }
         
-        // Get current level number and restart
-        Level currentLevel = currentGameController.getLevel();
-        if (currentLevel instanceof Level1) {
-            showLevel(1);
-        } else if (currentLevel instanceof Level2) {
-            showLevel(2);
-        } else if (currentLevel instanceof Level3) {
-            showLevel(3);
-        } else if (currentLevel instanceof Level4) {
-            showLevel(4);
-        } else if (currentLevel instanceof Level5) {
-            showLevel(5);
+        // Restart the same level number
+        if (currentLevelNumber > 0) {
+            showLevel(currentLevelNumber);
         }
     }
 
@@ -142,21 +124,32 @@ public class LevelManager {
      */
     public void goToNextLevel() {
         if (currentGameController != null) {
+            // Save before transitioning
+            if (currentLevelNumber > 0 && currentLevel != null) {
+                saveService.saveNow(currentLevel, "default", "level-" + currentLevelNumber);
+            }
+            saveService.stopAutosave();
             currentGameController.stopGame();
         }
         
-        Level currentLevel = currentGameController.getLevel();
-        if (currentLevel instanceof Level1) {
-            unlockLevel2();
-            showLevel(2);
-        } else if (currentLevel instanceof Level2) {
-            unlockLevel2();
-            showLevel(3);
-        } else if (currentLevel instanceof Level3) {
-            showLevel(4);
+        int next = currentLevelNumber + 1;
+        if (next >= 1 && next <= 9) {
+            showLevel(next);
         } else {
-            // Level 4 completed, go back to menu
             visualManager.showMenu();
+        }
+    }
+
+    private void ensureIndexLoaded() {
+        // Load index once
+        try {
+            // Attempt to load only if not already loaded
+            if (!configLoader.findLevelById("__probe__").isPresent()) {
+                configLoader.loadIndex("levels/levels-index.json");
+            }
+        } catch (IllegalStateException e) {
+            // levelIndex not loaded -> load it
+            configLoader.loadIndex("levels/levels-index.json");
         }
     }
 
@@ -187,6 +180,10 @@ public class LevelManager {
      */
     public void stopCurrentGame() {
         if (currentGameController != null) {
+            if (currentLevelNumber > 0 && currentLevel != null) {
+                saveService.saveNow(currentLevel, "default", "level-" + currentLevelNumber);
+            }
+            saveService.stopAutosave();
             currentGameController.stopGame();
             currentGameController = null;
         }

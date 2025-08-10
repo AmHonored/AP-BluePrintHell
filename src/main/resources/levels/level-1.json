@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "level-1",
+  "name": "Capacity",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 8000,
+    "initialCoins": 100,
+    "impactDisabled": false,
+    "collisionsDisabled": false
+  },
+  "systems": [
+    {
+      "id": "start-1",
+      "type": "START",
+      "position": { "x": 250, "y": 150 },
+      "ports": [
+        { "id": "start1_out1", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 290, "y": 150 } }
+      ]
+    },
+    {
+      "id": "start-2",
+      "type": "START",
+      "position": { "x": 150, "y": 270 },
+      "ports": [
+        { "id": "start2_out1", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 190, "y": 270 } }
+      ]
+    },
+    {
+      "id": "intermediate-1",
+      "type": "INTERMEDIATE",
+      "position": { "x": 400, "y": 230 },
+      "ports": [
+        { "id": "inter_in1", "role": "INPUT", "shape": "SQUARE", "position": { "x": 360, "y": 220 } },
+        { "id": "inter_in2", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 360, "y": 240 } },
+        { "id": "inter_out1", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 440, "y": 220 } },
+        { "id": "inter_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 440, "y": 240 } }
+      ]
+    },
+    {
+      "id": "end-1",
+      "type": "END",
+      "position": { "x": 650, "y": 230 },
+      "ports": [
+        { "id": "end_in1", "role": "INPUT", "shape": "SQUARE", "position": { "x": 610, "y": 220 } },
+        { "id": "end_in2", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 610, "y": 240 } }
+      ]
+    }
+  ]
+}
+

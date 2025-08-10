@@ -16,11 +16,13 @@ public class OAiryamanItem implements ShopItem {
         System.out.println("DEBUG: OAiryamanItem.apply() - Disabling collisions for " + getDurationSeconds() + " seconds");
         System.out.println("DEBUG: OAiryamanItem.apply() - Collisions disabled before: " + level.isCollisionsDisabled());
         level.setCollisionsDisabled(true);
+        level.getLevelState().setCollisionsDisableEndNanos(java.lang.System.nanoTime() + getDurationSeconds() * 1_000_000_000L);
         System.out.println("DEBUG: OAiryamanItem.apply() - Collisions disabled after: " + level.isCollisionsDisabled());
         
         PauseTransition delay = new PauseTransition(Duration.seconds(getDurationSeconds()));
         delay.setOnFinished(event -> {
             level.setCollisionsDisabled(false);
+            level.getLevelState().setCollisionsDisableEndNanos(0L);
             System.out.println("DEBUG: OAiryamanItem - Collisions re-enabled after " + getDurationSeconds() + " seconds");
             System.out.println("DEBUG: OAiryamanItem - Collisions disabled now: " + level.isCollisionsDisabled());
         });

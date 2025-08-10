@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "level-4",
+  "name": "Spy",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 20000,
+    "initialCoins": 100,
+    "impactDisabled": false,
+    "collisionsDisabled": false
+  },
+  "systems": [
+    { "id": "start", "type": "START", "position": { "x": 120, "y": 200 },
+      "ports": [ { "id": "start_out1", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 160, "y": 200 } } ] },
+    { "id": "spy1",  "type": "SPY",   "position": { "x": 280, "y": 200 },
+      "ports": [ { "id": "spy1_in1",  "role": "INPUT",  "shape": "SQUARE", "position": { "x": 240, "y": 200 } } ] },
+    { "id": "spy2",  "type": "SPY",   "position": { "x": 440, "y": 140 },
+      "ports": [ { "id": "spy2_out1", "role": "OUTPUT", "shape": "SQUARE", "position": { "x": 480, "y": 140 } } ] },
+    { "id": "spy3",  "type": "SPY",   "position": { "x": 440, "y": 260 },
+      "ports": [ { "id": "spy3_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 480, "y": 260 } } ] },
+    { "id": "end",   "type": "END",   "position": { "x": 620, "y": 200 },
+      "ports": [
+        { "id": "end_in1", "role": "INPUT", "shape": "SQUARE",   "position": { "x": 580, "y": 190 } },
+        { "id": "end_in2", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 580, "y": 210 } }
+      ] }
+  ],
+  "nextLevelId": "level-5"
+}
+

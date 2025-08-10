@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "levels": [
+    { "id": "level-1", "name": "Capacity", "path": "levels/level-1.json" },
+    { "id": "level-2", "name": "Collision", "path": "levels/level-2.json" },
+    { "id": "level-3", "name": "Hexagon & Ddos", "path": "levels/level-3.json" },
+    { "id": "level-4", "name": "Spy", "path": "levels/level-4.json" },
+    { "id": "level-5", "name": "VPN", "path": "levels/level-5.json" },
+    { "id": "level-6", "name": "Antivirus", "path": "levels/level-6.json" },
+    { "id": "level-9", "name": "Distribute & Merge", "path": "levels/level-9.json" }
+  ]
+}
+

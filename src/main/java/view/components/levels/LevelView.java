@@ -76,12 +76,24 @@ public abstract class LevelView extends StackPane {
         // Update HUD Aergia button when items change (e.g., Aergia purchased)
         shopOverlay.setOnItemsChanged(() -> {
             if (hud != null) {
-                String text = "Aergia (" + level.getAergiaScrolls() + ")";
-                if (level.isAergiaOnCooldown()) text += " \u23F3"; // hourglass
-                hud.getAergiaButton().setText(text);
-                // Also update enabled/disabled immediately so the button becomes usable after purchase in LevelView mode
-                boolean enabled = level.getAergiaScrolls() > 0 && !level.isAergiaOnCooldown();
-                hud.getAergiaButton().setDisable(!enabled);
+                // Update Aergia
+                String aergiaText = "Aergia (" + level.getAergiaScrolls() + ")";
+                if (level.isAergiaOnCooldown()) aergiaText += " \u23F3"; // hourglass
+                hud.getAergiaButton().setText(aergiaText);
+                boolean aergiaEnabled = level.getAergiaScrolls() > 0 && !level.isAergiaOnCooldown();
+                hud.getAergiaButton().setDisable(!aergiaEnabled);
+
+                // Update Sisyphus
+                String sisyphusText = "Sisyphus (" + level.getSisyphusScrolls() + ")";
+                hud.getSisyphusButton().setText(sisyphusText);
+                boolean sisyphusEnabled = level.getSisyphusScrolls() > 0; // no cooldown/conditions
+                hud.getSisyphusButton().setDisable(!sisyphusEnabled);
+
+                // Update Eliphas
+                String eliphasText = "Eliphas (" + level.getEliphasScrolls() + ")";
+                hud.getEliphasButton().setText(eliphasText);
+                boolean eliphasEnabled = level.getEliphasScrolls() > 0; // no cooldown
+                hud.getEliphasButton().setDisable(!eliphasEnabled);
             }
         });
         shopOverlay.setVisible(false);

@@ -8,6 +8,7 @@ import model.entity.ports.PortType;
 import java.util.ArrayList;
 
 public abstract class System {
+    protected String id; // stable id from level config
     public static final double WIDTH = 80;
     public static final double HEIGHT = 100;
 
@@ -44,6 +45,14 @@ public abstract class System {
         return type;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public void addPort(Port port) {
         if (port.getType() == PortType.INPUT) {
             inPorts.add(port);
@@ -74,6 +83,14 @@ public abstract class System {
             }
         }
         ready = true;
+    }
+
+    /**
+     * Whether this system can be dragged when Sisyphus is activated.
+     * Default is true; reference systems (start/end) override to false.
+     */
+    public boolean isDraggableWithSisyphus() {
+        return true;
     }
 
     public Port findBestOutPort(Packet packet) {

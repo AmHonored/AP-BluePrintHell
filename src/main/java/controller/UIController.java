@@ -206,6 +206,11 @@ public class UIController {
         // Update packets collected (actual count from end systems)
         int packetsCollected = level.getPacketsCollected();
         hud.getPacketsBox().setValue(String.valueOf(packetsCollected));
+        
+        // Update Sisyphus button text
+        String sisyphusText = "Sisyphus (" + level.getSisyphusScrolls() + ")";
+        hud.getSisyphusButton().setText(sisyphusText);
+        
         java.lang.System.out.println("DEBUG: UIController.updateHUDStats - Updated HUD: coins=" + currentCoins + ", packets=" + packetsCollected + ", loss=" + String.format("%.1f%%", lossPercentage));
     }
     

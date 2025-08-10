@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "level-2",
+  "name": "Collision",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 20000,
+    "initialCoins": 100,
+    "impactDisabled": false,
+    "collisionsDisabled": false
+  },
+  "systems": [
+    { "id": "start1", "type": "START", "position": { "x": 200, "y": 150 },
+      "ports": [
+        { "id": "start1_out1", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 240, "y": 140 } },
+        { "id": "start1_out2", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 240, "y": 160 } }
+      ]
+    },
+    { "id": "start2", "type": "START", "position": { "x": 200, "y": 270 },
+      "ports": [
+        { "id": "start2_out1", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 240, "y": 270 } }
+      ]
+    },
+    { "id": "intermediate1", "type": "INTERMEDIATE", "position": { "x": 450, "y": 210 },
+      "ports": [
+        { "id": "inter_in1",  "role": "INPUT",  "shape": "TRIANGLE", "position": { "x": 410, "y": 200 } },
+        { "id": "inter_in2",  "role": "INPUT",  "shape": "SQUARE",   "position": { "x": 410, "y": 220 } },
+        { "id": "inter_in3",  "role": "INPUT",  "shape": "TRIANGLE", "position": { "x": 410, "y": 240 } },
+        { "id": "inter_out1", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 490, "y": 200 } },
+        { "id": "inter_out2", "role": "OUTPUT", "shape": "TRIANGLE", "position": { "x": 490, "y": 220 } },
+        { "id": "inter_out3", "role": "OUTPUT", "shape": "SQUARE",   "position": { "x": 490, "y": 240 } }
+      ]
+    },
+    { "id": "end1", "type": "END", "position": { "x": 700, "y": 210 },
+      "ports": [
+        { "id": "end_in1", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 660, "y": 200 } },
+        { "id": "end_in2", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 660, "y": 220 } },
+        { "id": "end_in3", "role": "INPUT", "shape": "SQUARE",   "position": { "x": 660, "y": 240 } }
+      ]
+    }
+  ],
+  "nextLevelId": "level-3"
+}
+

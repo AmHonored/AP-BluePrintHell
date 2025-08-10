@@ -555,6 +555,17 @@ public class WireView extends Group {
         else setNormal();
     }
 
+    /**
+     * Refresh the geometry for a specific wire based on its current model endpoints/bend points.
+     * Safe no-op if there is no view registered for the given wire.
+     */
+    public static void refresh(Wire wire) {
+        WireView view = REGISTRY.get(wire);
+        if (view == null) return;
+        view.createWireShape();
+        view.updatePosition();
+    }
+
     public void updateWireLabel(String text, boolean animate) {
         wireLabel.setText(text);
         wireLabel.getStyleClass().add("wire-label");

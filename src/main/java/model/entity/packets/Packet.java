@@ -261,6 +261,10 @@ public abstract class Packet {
         return aergiaFrozenSpeed;
     }
 
+    public long getAergiaEffectEndNanos() {
+        return aergiaEffectEndNanos;
+    }
+
     /**
      * Take damage and reduce health
      */

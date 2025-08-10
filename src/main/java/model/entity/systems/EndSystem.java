@@ -34,4 +34,9 @@ public class EndSystem extends System {
             java.lang.System.out.println("DEBUG: EndSystem.claimPacket completed for packet " + pkt.getId());
         }
     }
+
+    @Override
+    public boolean isDraggableWithSisyphus() {
+        return false;
+    }
 }
