@@ -7,7 +7,6 @@ public class WireSave {
     public String sourcePortId;
     public String destPortId;
     public boolean active;
-    public int massivePacketRunCount;
     public List<BendPointSave> bendPoints;
 
     public static class BendPointSave {

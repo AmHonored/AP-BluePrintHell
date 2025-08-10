@@ -38,29 +38,23 @@ public abstract class SystemView extends StackPane {
         this.inputPortViews = new ArrayList<>();
         this.outputPortViews = new ArrayList<>();
         
-        // Create main container
         container = new VBox();
         container.setAlignment(Pos.CENTER);
         container.setSpacing(5);
         
-        // Create system rectangle
         systemRectangle = new Rectangle(SYSTEM_WIDTH, SYSTEM_HEIGHT);
         systemRectangle.setArcWidth(10);
         systemRectangle.setArcHeight(10);
         
-        // Create indicator lamp
         indicatorLamp = new Circle(INDICATOR_RADIUS);
         indicatorLamp.getStyleClass().add("indicator-lamp-off");
         
-        // Create system label
         systemLabel = new Label(labelText);
         systemLabel.getStyleClass().add("system-label");
         
-        // Position components
         StackPane systemContainer = new StackPane();
         systemContainer.getChildren().addAll(systemRectangle, getSystemContent());
         
-        // Add indicator lamp to top-right of system
         StackPane.setAlignment(indicatorLamp, Pos.TOP_RIGHT);
         StackPane.setMargin(indicatorLamp, new javafx.geometry.Insets(5, 5, 0, 0));
         systemContainer.getChildren().add(indicatorLamp);
@@ -68,61 +62,47 @@ public abstract class SystemView extends StackPane {
         container.getChildren().addAll(systemContainer, systemLabel);
         this.getChildren().add(container);
         
-        // Create and add ports
         createPorts();
         
-        // Set position
         updatePosition();
         
-        // Apply initial styling
         applySystemStyling();
 
-        // If this is a distributor, tag class for CSS if desired
         if (system instanceof model.entity.systems.DistributorSystem) {
             systemRectangle.getStyleClass().add("system-distributor");
         }
     }
     
-    /**
-     * Create and position ports for this system
-     */
     private void createPorts() {
-        // Create input ports (left side)
+
         for (int i = 0; i < system.getInPorts().size(); i++) {
             Port port = system.getInPorts().get(i);
             PortView portView = createPortView(port);
             inputPortViews.add(portView);
             
-            // Position input ports on the left border (relative to system center)
             double yOffset = (i + 1) * (SYSTEM_HEIGHT / (system.getInPorts().size() + 1));
             portView.setLayoutX(-PORT_SIZE);
             portView.setLayoutY(yOffset - SYSTEM_HEIGHT / 2);
         }
         
-        // Create output ports (right side)
         for (int i = 0; i < system.getOutPorts().size(); i++) {
             Port port = system.getOutPorts().get(i);
             PortView portView = createPortView(port);
             outputPortViews.add(portView);
             
-            // Position output ports on the right border (relative to system center)
             double yOffset = (i + 1) * (SYSTEM_HEIGHT / (system.getOutPorts().size() + 1));
             portView.setLayoutX(SYSTEM_WIDTH);
             portView.setLayoutY(yOffset - SYSTEM_HEIGHT / 2);
         }
     }
-    
-    /**
-     * Create a port view based on the port type
-     */
+
     private PortView createPortView(Port port) {
-        boolean isInput = port.getType() == model.entity.ports.PortType.INPUT;
         if (port instanceof SquarePort) {
-            return new SquarePortView(port, isInput);
+            return new SquarePortView(port);
         } else if (port instanceof TrianglePort) {
-            return new TrianglePortView(port, isInput);
+            return new TrianglePortView(port);
         } else if (port instanceof HexagonPort) {
-            return new HexagonPortView(port, isInput);
+            return new HexagonPortView(port);
         } else {
             return new PortView(port);
         }
@@ -148,9 +128,6 @@ public abstract class SystemView extends StackPane {
         }
     }
 
-    /**
-     * Visually mark the system as degraded (e.g., a connected wire disabled) by setting indicator to yellow.
-     */
     public void setIndicatorWarning() {
         indicatorLamp.getStyleClass().clear();
         indicatorLamp.getStyleClass().add("indicator-lamp-warning");
@@ -161,18 +138,15 @@ public abstract class SystemView extends StackPane {
         updateIndicatorLamp(ready);
     }
     
-    /**
-     * Check if all ports of this system are connected
-     */
+
     public boolean areAllPortsConnected() {
-        // Check input ports
+
         for (model.entity.ports.Port port : system.getInPorts()) {
             if (!port.isConnected()) {
                 return false;
             }
         }
         
-        // Check output ports
         for (model.entity.ports.Port port : system.getOutPorts()) {
             if (!port.isConnected()) {
                 return false;
@@ -181,10 +155,7 @@ public abstract class SystemView extends StackPane {
         
         return true;
     }
-    
-    /**
-     * Update the indicator based on connection status
-     */
+
     public void updateConnectionStatus() {
         boolean allConnected = areAllPortsConnected();
         system.setReady(allConnected);
@@ -211,9 +182,6 @@ public abstract class SystemView extends StackPane {
         return outputPortViews;
     }
     
-    /**
-     * Set wire controller for all ports
-     */
     public void setWireController(controller.WireController wireController) {
         for (PortView portView : inputPortViews) {
             portView.setWireController(wireController);

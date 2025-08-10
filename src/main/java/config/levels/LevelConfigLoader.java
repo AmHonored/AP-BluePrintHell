@@ -9,9 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Loads level index and individual level definitions from JSON resources.
- */
 public class LevelConfigLoader {
     private final ObjectMapper objectMapper;
     private final Map<String, LevelDefinition> cacheById = new HashMap<>();

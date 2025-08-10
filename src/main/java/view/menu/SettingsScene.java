@@ -11,10 +11,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.layout.StackPane;
 
-/**
- * Settings scene for Blueprint Hell. Contains a sound volume slider and a Back button.
- * No business logic, just UI and event hooks.
- */
 public class SettingsScene extends StackPane {
     private final Slider volumeSlider;
     private final Label volumeValueLabel;
@@ -37,13 +33,11 @@ public class SettingsScene extends StackPane {
         volumeSlider.setPrefWidth(400);
         volumeSlider.setPrefHeight(40);
 
-        // Volume value display
         volumeValueLabel = new Label(String.format("%.0f%%", initialVolume));
         volumeValueLabel.getStyleClass().add("settings-label");
         volumeValueLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         volumeValueLabel.setStyle("-fx-text-fill: #00d4ff; -fx-min-width: 60px; -fx-alignment: center;");
 
-        // Update label when slider changes
         volumeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
             volumeValueLabel.setText(String.format("%.0f%%", newVal.doubleValue()));
         });

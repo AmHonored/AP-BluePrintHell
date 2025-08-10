@@ -7,7 +7,7 @@
     { "id": "level-4", "name": "Spy", "path": "levels/level-4.json" },
     { "id": "level-5", "name": "VPN", "path": "levels/level-5.json" },
     { "id": "level-6", "name": "Antivirus", "path": "levels/level-6.json" },
-    { "id": "level-9", "name": "Distribute & Merge", "path": "levels/level-9.json" }
+    { "id": "level-7", "name": "Distribute & Merge", "path": "levels/level-7.json" }
   ]
 }
 

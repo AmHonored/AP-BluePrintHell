@@ -504,6 +504,204 @@
     -fx-text-alignment: center;
 }
 
+/* Game Over Scene Styles */
+.game-over-title {
+    -fx-font-family: "Arial Black", "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 48;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e94560;
+    -fx-effect: dropshadow(gaussian, rgba(233, 69, 96, 0.8), 15, 0.8, 0, 3),
+               dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0.3, 0, 0);
+    -fx-text-alignment: center;
+    -fx-padding: 0 0 10 0;
+}
+
+.game-over-subtitle {
+    -fx-font-size: 18;
+    -fx-fill: #00d4ff;
+    -fx-font-weight: bold;
+    -fx-text-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.4), 5, 0.3, 0, 1);
+}
+
+/* ========================================
+   LEVEL COMPLETE SCENE - CYBERPUNK STYLE
+   ======================================== */
+
+/* Main overlay container */
+.level-complete-overlay {
+    -fx-background-color: rgba(10, 14, 39, 0.95);
+    -fx-border-color: linear-gradient(to right, #32cd32, #00d4ff, #32cd32);
+    -fx-border-width: 3;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 25, 0.3, 0, 0),
+               dropshadow(gaussian, rgba(50, 205, 50, 0.4), 15, 0.8, 0, 0);
+}
+
+/* Status indicator */
+.level-complete-status {
+    -fx-font-family: "Courier New", "Consolas", monospace;
+    -fx-font-size: 14;
+    -fx-font-weight: bold;
+    -fx-text-fill: #32cd32;
+    -fx-effect: dropshadow(gaussian, rgba(50, 205, 50, 0.8), 8, 0.6, 0, 0);
+    -fx-text-alignment: center;
+}
+
+/* Main title */
+.level-complete-title {
+    -fx-font-family: "Arial Black", "Impact", Arial, sans-serif;
+    -fx-font-size: 42;
+    -fx-font-weight: bold;
+    -fx-text-fill: linear-gradient(to right, #32cd32, #00d4ff);
+    -fx-effect: dropshadow(gaussian, rgba(50, 205, 50, 0.9), 15, 0.8, 0, 3),
+               dropshadow(gaussian, rgba(0, 212, 255, 0.6), 10, 0.5, 0, 0);
+    -fx-text-alignment: center;
+}
+
+/* Subtitle */
+.level-complete-subtitle {
+    -fx-font-family: "Arial", "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-fill: #00d4ff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.5), 5, 0.4, 0, 1);
+    -fx-text-alignment: center;
+}
+
+/* Cyberpunk accent bar */
+.level-complete-accent-bar {
+    -fx-fill: linear-gradient(to right, #32cd32, #00d4ff, #32cd32);
+    -fx-effect: dropshadow(gaussian, rgba(50, 205, 50, 0.8), 10, 0.8, 0, 0);
+}
+
+/* ========================================
+   CYBERPUNK BUTTONS
+   ======================================== */
+
+/* Base cyberpunk button style */
+.cyberpunk-button {
+    -fx-background-color: linear-gradient(to bottom, #16213e, #0f3460);
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Arial Black", "Impact", Arial, sans-serif;
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+    -fx-border-width: 2;
+    -fx-padding: 15 30;
+    -fx-cursor: hand;
+    -fx-min-width: 180;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 8, 0.3, 0, 3);
+    -fx-transition: all 0.2s ease;
+}
+
+/* Success button (Next Level) */
+.cyberpunk-button-success {
+    -fx-border-color: linear-gradient(to right, #32cd32, #5fc267);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 8, 0.3, 0, 3),
+               dropshadow(gaussian, rgba(50, 205, 50, 0.6), 12, 0.8, 0, 0);
+}
+
+.cyberpunk-button-success:hover {
+    -fx-background-color: linear-gradient(to bottom, #1e2a4a, #16213e);
+    -fx-border-color: linear-gradient(to right, #5fc267, #32cd32);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 12, 0.4, 0, 4),
+               dropshadow(gaussian, rgba(50, 205, 50, 0.9), 18, 0.9, 0, 0);
+}
+
+.cyberpunk-button-success:pressed {
+    -fx-background-color: linear-gradient(to bottom, #0d1a35, #0f3460);
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* Secondary button (Replay Level) */
+.cyberpunk-button-secondary {
+    -fx-border-color: linear-gradient(to right, #00d4ff, #00ffff);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 8, 0.3, 0, 3),
+               dropshadow(gaussian, rgba(0, 212, 255, 0.6), 12, 0.8, 0, 0);
+}
+
+.cyberpunk-button-secondary:hover {
+    -fx-background-color: linear-gradient(to bottom, #1e2a4a, #16213e);
+    -fx-border-color: linear-gradient(to right, #00ffff, #00d4ff);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 12, 0.4, 0, 4),
+               dropshadow(gaussian, rgba(0, 212, 255, 0.9), 18, 0.9, 0, 0);
+}
+
+.cyberpunk-button-secondary:pressed {
+    -fx-background-color: linear-gradient(to bottom, #0d1a35, #0f3460);
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* Danger button (Main Menu) */
+.cyberpunk-button-danger {
+    -fx-border-color: linear-gradient(to right, #e94560, #ff6b85);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 8, 0.3, 0, 3),
+               dropshadow(gaussian, rgba(233, 69, 96, 0.6), 12, 0.8, 0, 0);
+}
+
+.cyberpunk-button-danger:hover {
+    -fx-background-color: linear-gradient(to bottom, #1e2a4a, #16213e);
+    -fx-border-color: linear-gradient(to right, #ff6b85, #e94560);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 12, 0.4, 0, 4),
+               dropshadow(gaussian, rgba(233, 69, 96, 0.9), 18, 0.9, 0, 0);
+}
+
+.cyberpunk-button-danger:pressed {
+    -fx-background-color: linear-gradient(to bottom, #0d1a35, #0f3460);
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* Stats and Achievement Items */
+.overlay-stat-item {
+    -fx-background-color: rgba(22, 33, 62, 0.4);
+    -fx-background-radius: 8;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 8 20 8 20;
+    -fx-spacing: 10;
+    -fx-alignment: center;
+}
+
+.overlay-achievement-item {
+    -fx-background-color: rgba(50, 205, 50, 0.15);
+    -fx-background-radius: 10;
+    -fx-border-color: #32cd32;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-padding: 8 15 8 15;
+    -fx-spacing: 15;
+    -fx-alignment: center-left;
+}
+
+.overlay-achievement-emoji {
+    -fx-font-size: 24;
+    -fx-padding: 0 10 0 0;
+}
+
+.overlay-achievement-title {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #32cd32;
+}
+
+.overlay-achievement-description {
+    -fx-font-size: 14;
+    -fx-text-fill: #ffffff;
+    -fx-wrap-text: true;
+}
+
 /* ========================================
    GAME OBJECTS (Systems, Packets, Wires)
    ======================================== */
@@ -881,4 +1079,84 @@
     -fx-border-color: #777777;
     -fx-effect: none;
     -fx-cursor: default;
+}
+
+/* Main overlay container */
+.game-over-overlay {
+    -fx-background-color: rgba(10, 14, 39, 0.95);
+    -fx-border-color: #e94560;
+    -fx-border-width: 4;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 20, 0.4, 0, 0);
+}
+
+/* Status indicator */
+.game-over-status {
+    -fx-font-family: "Courier New", "Consolas", monospace;
+    -fx-font-size: 14;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e94560;
+    -fx-effect: dropshadow(gaussian, rgba(233, 69, 96, 0.5), 5, 0.4, 0, 0);
+    -fx-text-alignment: center;
+}
+
+/* Main title - PROMINENT */
+.game-over-title {
+    -fx-font-family: "Arial Black", "Impact", Arial, sans-serif;
+    -fx-font-size: 64;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ff4466;
+    -fx-effect: dropshadow(gaussian, rgba(255, 68, 102, 0.8), 8, 0.6, 0, 2),
+               dropshadow(gaussian, rgba(0, 0, 0, 0.9), 4, 0.5, 0, 0);
+    -fx-text-alignment: center;
+    -fx-padding: 10 0 10 0;
+}
+
+/* Subtitle */
+.game-over-subtitle {
+    -fx-font-family: "Arial", "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 3, 0.3, 0, 1);
+    -fx-text-alignment: center;
+}
+
+/* Danger accent bar */
+.game-over-accent-bar {
+    -fx-fill: #e94560;
+    -fx-effect: dropshadow(gaussian, rgba(233, 69, 96, 0.4), 6, 0.5, 0, 0);
+}
+
+/* Stats container */
+.game-over-stats-container {
+    -fx-background-color: rgba(22, 33, 62, 0.5);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(233, 69, 96, 0.3);
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-padding: 15 25 15 25;
+}
+
+/* Individual stat items */
+.game-over-stat-item {
+    -fx-background-color: rgba(22, 33, 62, 0.6);
+    -fx-background-radius: 8;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 10 25 10 25;
+    -fx-spacing: 15;
+    -fx-alignment: center;
+}
+
+.game-over-stat-title {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+.game-over-stat-value {
+    -fx-font-size: 18;
+    -fx-font-weight: bold;
 }

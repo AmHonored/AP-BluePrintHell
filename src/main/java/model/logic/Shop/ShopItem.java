@@ -5,6 +5,6 @@ import model.levels.Level;
 public interface ShopItem {
     String getName();
     int getPrice();
-    int getDurationSeconds(); // 0 for instant
+    int getDurationSeconds(); 
     void apply(Level level);
 }

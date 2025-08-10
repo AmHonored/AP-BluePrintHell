@@ -1,16 +1,11 @@
 package view.menu;
 
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.layout.StackPane;
 
-/**
- * Main menu scene for Blueprint Hell. Contains buttons for navigation.
- * Follows SOLID and clean code principles. No business logic here.
- */
 public class MenuScene extends StackPane {
     private final Button startGameButton;
     private final Button levelSelectButton;

@@ -38,6 +38,6 @@
         { "id": "end_in3", "role": "INPUT", "shape": "SQUARE", "position": { "x": 480, "y": 280 } }
       ] }
   ],
-  "nextLevelId": "level-9"
+  "nextLevelId": "level-7"
 }
 

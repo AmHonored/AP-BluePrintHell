@@ -6,6 +6,7 @@ public class GameStateSave {
     public boolean gameStarted;
     public int currentTime;
     public int coins;
+    public boolean levelCompleted;
 }
 
 

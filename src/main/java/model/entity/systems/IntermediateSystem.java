@@ -4,7 +4,6 @@ import javafx.geometry.Point2D;
 import java.util.LinkedList;
 import java.util.Queue;
 import model.entity.packets.Packet;
-import model.entity.ports.Port;
 
 public class IntermediateSystem extends System {
     private static final int MAX_STORAGE = 5;
@@ -40,7 +39,6 @@ public class IntermediateSystem extends System {
 
     public void removeLastPacket() {
         if (!storage.isEmpty()) {
-            // Remove the last packet (not FIFO, but for overflow handling)
             Packet last = null;
             for (Packet p : storage) last = p;
             if (last != null) storage.remove(last);

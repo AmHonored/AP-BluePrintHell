@@ -12,14 +12,13 @@ public class DistributorSystemView extends SystemView {
 
     @Override
     protected void applySystemStyling() {
-        // Base like normal system + pink glowing border to distinguish
         systemRectangle.getStyleClass().clear();
         systemRectangle.getStyleClass().add("system-normal");
         systemRectangle.setStyle(
             "-fx-fill: #333333;" +
             "-fx-stroke:rgb(232, 61, 195);" +
             "-fx-stroke-width: 3;" +
-            "-fx-effect: dropshadow(gaussian, rgba(232, 61, 195), 15, 0, 0, 0);"
+            "-fx-effect: dropshadow(gaussian, rgba(232, 61, 195, 0.8), 15, 0, 0, 0);"
         );
     }
 

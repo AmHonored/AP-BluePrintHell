@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "level-9",
+  "id": "level-7",
   "name": "Distribute & Merge",
   "display": {
     "gamePane": { "width": 800, "height": 500 },
@@ -45,4 +45,16 @@
       ] }
   ]
 }
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -8,7 +8,7 @@ import model.entity.ports.PortType;
 import java.util.ArrayList;
 
 public abstract class System {
-    protected String id; // stable id from level config
+    protected String id;
     public static final double WIDTH = 80;
     public static final double HEIGHT = 100;
 
@@ -17,7 +17,6 @@ public abstract class System {
     protected SystemType type;
     protected final ArrayList<Port> inPorts = new ArrayList<>();
     protected final ArrayList<Port> outPorts = new ArrayList<>();
-    // Ports and wires will be added in future steps
 
     public System(Point2D position, SystemType type) {
         this.position = position;
@@ -85,27 +84,33 @@ public abstract class System {
         ready = true;
     }
 
-    /**
-     * Whether this system can be dragged when Sisyphus is activated.
-     * Default is true; reference systems (start/end) override to false.
-     */
     public boolean isDraggableWithSisyphus() {
         return true;
     }
 
+    public List<Port> getAvailableOutPorts(Packet packet) {
+        List<Port> compatibleAndAvailable = new ArrayList<>();
+        List<Port> available = new ArrayList<>();
+        for (Port port : outPorts) {
+            boolean connected = port.isConnected();
+            boolean wireAvailable = port.getWire() != null && port.getWire().isActive();
+            if (!connected || !wireAvailable) {
+                continue;
+            }
+            if (packet != null && port.isCompatible(packet)) {
+                compatibleAndAvailable.add(port);
+            } else {
+                available.add(port);
+            }
+        }
+        if (!compatibleAndAvailable.isEmpty()) {
+            return compatibleAndAvailable;
+        }
+        return available;
+    }
+
     public Port findBestOutPort(Packet packet) {
-        // Prefer an available output port compatible with the packet
-        for (Port port : outPorts) {
-            if (port.isConnected() && port.isCompatible(packet)) {
-                return port;
-            }
-        }
-        // Otherwise, use the first available output port
-        for (Port port : outPorts) {
-            if (port.isConnected()) {
-                return port;
-            }
-        }
-        return null;
+        java.util.List<Port> available = getAvailableOutPorts(packet);
+        return available.isEmpty() ? null : available.get(0);
     }
 }

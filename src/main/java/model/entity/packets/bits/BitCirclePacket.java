@@ -20,7 +20,7 @@ public class BitCirclePacket extends Packet {
 
     @Override
     public Shape getCollisionShape() {
-        double radius = 6.0; // Increased from 4.0
+        double radius = 6.0; 
         return new Circle(getPosition().getX(), getPosition().getY(), radius);
     }
 }

@@ -45,31 +45,18 @@ public class VPNSystem extends System {
         }
     }
 
-    /**
-     * Check if this VPN system is disabled
-     */
     public boolean isDisabled() {
         return disabled;
     }
 
-    /**
-     * Disable this VPN system
-     */
     public void disable() {
         this.disabled = true;
     }
 
-    /**
-     * Enable this VPN system (for testing or reset purposes)
-     */
     public void enable() {
         this.disabled = false;
     }
 
-    /**
-     * Check if a packet should disable this VPN system
-     * VPN system gets disabled when a packet with speed > 75 enters
-     */
     public boolean shouldDisableFromPacket(Packet packet) {
         return packet.getSpeed() > HIGH_SPEED_THRESHOLD;
     }

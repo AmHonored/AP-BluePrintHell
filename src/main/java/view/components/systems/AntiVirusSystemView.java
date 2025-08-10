@@ -13,15 +13,13 @@ public class AntiVirusSystemView extends SystemView {
     private final int maxCapacity = 5;
     
     public AntiVirusSystemView(AntiVirusSystem system) {
-        super(system, "");  // No bottom label for AntiVirus systems
+        super(system, ""); 
     }
     
     @Override
     protected void applySystemStyling() {
-        // Apply normal system styling with yellow glowing border
         systemRectangle.getStyleClass().add("system-normal");
         
-        // Add yellow glow effect
         systemRectangle.setStyle(
             "-fx-fill: #333333;" +
             "-fx-stroke: #ffff00;" +
@@ -34,21 +32,17 @@ public class AntiVirusSystemView extends SystemView {
     protected StackPane getSystemContent() {
         StackPane content = new StackPane();
         
-        // Create "AntiVirus" label inside the system
         antivirusLabel = new Label("AntiVirus");
         antivirusLabel.getStyleClass().add("system-label");
         antivirusLabel.setStyle("-fx-text-fill: #ffff00; -fx-font-weight: bold; -fx-font-size: 12;");
         
-        // Create capacity label
         capacityLabel = new Label(currentCapacity + "/" + maxCapacity);
         capacityLabel.getStyleClass().addAll("capacity-label", "capacity-normal");
         
-        // Create status label for disabled state
         statusLabel = new Label("");
         statusLabel.getStyleClass().add("status-label");
         statusLabel.setStyle("-fx-text-fill: #ff6600; -fx-font-weight: bold; -fx-font-size: 10;");
         
-        // Position labels
         StackPane.setAlignment(antivirusLabel, Pos.CENTER);
         StackPane.setAlignment(capacityLabel, Pos.BOTTOM_CENTER);
         StackPane.setAlignment(statusLabel, Pos.TOP_CENTER);
@@ -59,40 +53,26 @@ public class AntiVirusSystemView extends SystemView {
         
         return content;
     }
-    
-    /**
-     * Update the capacity display
-     */
+
     public void updateCapacity(int currentCapacity) {
         this.currentCapacity = currentCapacity;
         if (capacityLabel != null) {
-            capacityLabel.setText(currentCapacity + "/" + maxCapacity);
+            String newText = currentCapacity + "/" + maxCapacity;
+            capacityLabel.setText(newText);
             
-            // Change color based on capacity
-            if (currentCapacity >= maxCapacity) {
-                capacityLabel.getStyleClass().removeAll("capacity-normal", "capacity-warning");
-                capacityLabel.getStyleClass().add("capacity-full");
-            } else if (currentCapacity >= maxCapacity * 0.7) {
-                capacityLabel.getStyleClass().removeAll("capacity-normal", "capacity-full");
-                capacityLabel.getStyleClass().add("capacity-warning");
-            } else {
-                capacityLabel.getStyleClass().removeAll("capacity-warning", "capacity-full");
-                capacityLabel.getStyleClass().add("capacity-normal");
-            }
+            // Update visibility based on capacity
+            boolean shouldBeVisible = currentCapacity > 0;
+            capacityLabel.setVisible(shouldBeVisible);
         }
     }
     
-    /**
-     * Update the disabled status display
-     */
     public void updateDisabledStatus(boolean disabled, long remainingTimeMs) {
         if (statusLabel != null) {
             if (disabled && remainingTimeMs > 0) {
-                long remainingSeconds = (remainingTimeMs + 999) / 1000; // Round up
+                long remainingSeconds = (remainingTimeMs + 999) / 1000; 
                 statusLabel.setText("DISABLED " + remainingSeconds + "s");
                 statusLabel.setVisible(true);
                 
-                // Dim the system when disabled
                 systemRectangle.setStyle(
                     "-fx-fill: #222222;" +
                     "-fx-stroke: #888800;" +
@@ -104,16 +84,12 @@ public class AntiVirusSystemView extends SystemView {
                 statusLabel.setText("");
                 statusLabel.setVisible(false);
                 
-                // Restore normal appearance
                 applySystemStyling();
                 antivirusLabel.setStyle("-fx-text-fill: #ffff00; -fx-font-weight: bold; -fx-font-size: 12;");
             }
         }
     }
     
-    /**
-     * Get the underlying AntiVirus system
-     */
     public AntiVirusSystem getAntiVirusSystem() {
         return (AntiVirusSystem) system;
     }

@@ -1,8 +1,5 @@
 package config.levels;
 
-/**
- * Simple point for JSON mapping.
- */
 public class Point {
     private double x;
     private double y;

@@ -20,7 +20,7 @@ public class BitRectPacket extends Packet {
 
     @Override
     public Shape getCollisionShape() {
-        double size = 12.0; // Increased from 8.0
+        double size = 12.0;
         double half = size / 2.0;
         return new Rectangle(getPosition().getX() - half, getPosition().getY() - half, size, size);
     }

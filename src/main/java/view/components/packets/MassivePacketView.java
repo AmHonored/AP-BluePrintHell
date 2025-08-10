@@ -16,7 +16,7 @@ public class MassivePacketView extends PacketView {
     @Override
     protected Shape createPacketShape() {
         Circle circle = new Circle(RADIUS);
-        // Color by type
+
         if (packet.getType() == PacketType.MASSIVE_TYPE1) {
             circle.setFill(Color.CORAL);
             circle.setStroke(Color.DARKSALMON);

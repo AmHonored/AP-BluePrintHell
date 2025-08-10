@@ -1,8 +1,5 @@
 package config.levels;
 
-/**
- * Model-side static settings for a level.
- */
 public class LevelModelDefinition {
     private int wireLength;
     private int initialCoins = 20;

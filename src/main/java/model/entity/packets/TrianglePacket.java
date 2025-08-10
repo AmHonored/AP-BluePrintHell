@@ -17,20 +17,13 @@ public class TrianglePacket extends Packet {
     @Override
     public void updateMovement(double deltaTimeSeconds, boolean compatiblePort) {
         super.updateMovement(deltaTimeSeconds, compatiblePort);
-        
-        if (isAergiaFrozenActive()) {
-            double frozen = getAergiaFrozenSpeedOrNegative();
-            if (frozen >= 0.0) currentSpeed = frozen;
-        } else {
-            if (compatiblePort) {
-                currentSpeed = BASE_SPEED;
-            } else {
-                currentSpeed += ACCELERATION * deltaTimeSeconds;
-                if (currentSpeed > MAX_SPEED) {
-                    currentSpeed = MAX_SPEED;
-                }
-            }
-        }
+        currentSpeed = computeUpdatedSpeed(
+            currentSpeed,
+            deltaTimeSeconds,
+            compatiblePort,
+            BASE_SPEED,
+            MAX_SPEED
+        );
     }
 
     @Override
@@ -43,15 +36,20 @@ public class TrianglePacket extends Packet {
     }
 
     @Override
+    protected boolean isAergiaApplicable() { return true; }
+
+    @Override
+    protected double computeBaseSpeed(double current, double dt, boolean compatible) {
+        return compatible ? BASE_SPEED : current + ACCELERATION * dt;
+    }
+
+    @Override
     public Shape getCollisionShape() {
-        // Use original visual size (16) for collision detection
+
         double size = 16.0;
-        double half = size / 2.0;
         double x = getPosition().getX();
         double y = getPosition().getY();
         
-        // Create triangle collision shape matching visual representation
-        // Equilateral triangle centered at packet position
         Polygon triangle = new Polygon();
         triangle.getPoints().addAll(new Double[]{
             x, y - size / Math.sqrt(3),                    // Top vertex (peak)

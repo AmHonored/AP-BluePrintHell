@@ -16,17 +16,12 @@ import model.entity.systems.SpySystem;
 import model.entity.systems.StartSystem;
 import model.entity.systems.System;
 
-/**
- * Builds a model {@link Level} instance from a {@link LevelDefinition}.
- * Not wired into gameplay yet; safe to compile in isolation.
- */
 public class LevelFactory {
 
     public Level createLevel(LevelDefinition definition) {
         if (definition == null) throw new IllegalArgumentException("definition must not be null");
 
         Level level = new Level(definition.getModel().getWireLength());
-        // Align initial coins with config (only increase to avoid needing a subtract API)
         int currentCoins = level.getCoins();
         int targetCoins = definition.getModel().getInitialCoins();
         if (targetCoins > currentCoins) {
@@ -36,21 +31,22 @@ public class LevelFactory {
         for (SystemDefinition sysDef : definition.getSystems()) {
             System system = instantiateSystem(sysDef);
             system.setId(sysDef.getId());
-            // Attach ports
             for (PortDefinition portDef : sysDef.getPorts()) {
                 addPortToSystem(system, portDef);
             }
             level.addSystem(system);
         }
-
-        // Optional: flags like impact/collisions can be applied once public API exists on Level
         return level;
     }
 
     private System instantiateSystem(SystemDefinition sysDef) {
         Point2D pos = new Point2D(sysDef.getPosition().getX(), sysDef.getPosition().getY());
         switch (sysDef.getType()) {
-            case START: return new StartSystem(pos);
+            case START: {
+                StartSystem s = new StartSystem(pos);
+                s.setMaxPacketsToGenerate(8);
+                return s;
+            }
             case INTERMEDIATE: return new IntermediateSystem(pos);
             case END: return new EndSystem(pos);
             case DDOS: return new DDosSystem(pos);

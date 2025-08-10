@@ -1,7 +1,6 @@
 package view.game;
 
 import javafx.geometry.Pos;
-// import javafx.scene.layout.HBox; // replaced with TilePane
 import javafx.scene.layout.TilePane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
@@ -37,7 +36,6 @@ public class ShopScene extends VBox {
         coinsLabel = new Label("Coins: " + level.getCoins());
         coinsLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #00d4ff; -fx-padding: 0 0 20 0;");
 
-        // Grid of items: 3 per row, vertical scrolling
         itemsGrid = new TilePane();
         itemsGrid.setHgap(30);
         itemsGrid.setVgap(30);
@@ -45,7 +43,6 @@ public class ShopScene extends VBox {
         itemsGrid.setTileAlignment(Pos.CENTER);
         itemsGrid.setAlignment(Pos.TOP_CENTER);
 
-        // Vertical scroll pane wrapping the grid
         scrollPane = new ScrollPane(itemsGrid);
         scrollPane.setFitToWidth(true);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);

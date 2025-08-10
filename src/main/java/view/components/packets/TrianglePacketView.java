@@ -12,7 +12,6 @@ public class TrianglePacketView extends PacketView {
 
     @Override
     protected Shape createPacketShape() {
-        // Create an equilateral triangle centered at (0,0)
         double size = 16;
         Polygon triangle = new Polygon(
             0.0, -size / Math.sqrt(3),

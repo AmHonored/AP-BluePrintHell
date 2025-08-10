@@ -6,7 +6,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Button;
-import javafx.scene.control.Alert;
 import model.logic.Shop.ShopItem;
 
 public class ShopItemView extends VBox {
@@ -15,7 +14,7 @@ public class ShopItemView extends VBox {
     private final Label priceLabel;
     private final Label durationLabel;
     private final Button buyButton;
-    private final Button infoButton;
+    
 
     public ShopItemView(ShopItem item) {
         this.item = item;
@@ -67,16 +66,7 @@ public class ShopItemView extends VBox {
         buyButton.setOnMouseEntered(e -> buyButton.setStyle(getBuyButtonHoverStyle()));
         buyButton.setOnMouseExited(e -> buyButton.setStyle(getBuyButtonStyle()));
         
-        // Info button
-        infoButton = new Button("i");
-        infoButton.setPrefWidth(30);
-        infoButton.setPrefHeight(30);
-        infoButton.setStyle(getInfoButtonStyle());
-        infoButton.setOnMouseEntered(e -> infoButton.setStyle(getInfoButtonHoverStyle()));
-        infoButton.setOnMouseExited(e -> infoButton.setStyle(getInfoButtonStyle()));
-        infoButton.setOnAction(e -> showItemInfo());
-        
-        buttonsBox.getChildren().addAll(buyButton, infoButton);
+        buttonsBox.getChildren().addAll(buyButton);
         
         this.getChildren().addAll(nameLabel, priceLabel, durationLabel, buttonsBox);
     }
@@ -89,86 +79,7 @@ public class ShopItemView extends VBox {
         return "-fx-font-size: 16px; -fx-background-radius: 8; -fx-background-color: linear-gradient(to bottom, #2d5fa4, #00d4ff); -fx-text-fill: #fff; -fx-font-weight: bold; -fx-border-color: #00d4ff; -fx-border-width: 2; -fx-effect: dropshadow(gaussian, #00d4ff, 8, 0.5, 0, 2);";
     }
     
-    private String getInfoButtonStyle() {
-        return "-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-background-color: linear-gradient(to bottom, #e94560, #a34242); -fx-text-fill: #fff; -fx-border-color: #e94560; -fx-border-width: 2; -fx-effect: dropshadow(gaussian, #e94560, 4, 0.3, 0, 1);";
-    }
-    
-    private String getInfoButtonHoverStyle() {
-        return "-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-background-color: linear-gradient(to bottom, #a34242, #e94560); -fx-text-fill: #fff; -fx-border-color: #e94560; -fx-border-width: 2; -fx-effect: dropshadow(gaussian, #e94560, 8, 0.5, 0, 2);";
-    }
-    
-    private void showItemInfo() {
-        service.AudioManager.playButtonClick();
-        
-        String description = getItemDescription();
-        
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Item Information");
-        alert.setHeaderText(item.getName());
-        alert.setContentText(description);
-        
-        // Style the alert to match the game theme
-        alert.getDialogPane().setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #0a0e27, #16213e);" +
-            "-fx-border-color: #00d4ff;" +
-            "-fx-border-width: 3;" +
-            "-fx-border-radius: 15;" +
-            "-fx-background-radius: 15;"
-        );
-        
-        // Style the content text
-        alert.getDialogPane().lookup(".content.label").setStyle(
-            "-fx-text-fill: #ffffff;" +
-            "-fx-font-size: 14px;" +
-            "-fx-padding: 20px;"
-        );
-        
-        // Style the header text
-        alert.getDialogPane().lookup(".header-panel .label").setStyle(
-            "-fx-text-fill: #00d4ff;" +
-            "-fx-font-size: 20px;" +
-            "-fx-font-weight: bold;"
-        );
-        
-        alert.showAndWait();
-    }
-    
-    private String getItemDescription() {
-        switch (item.getName()) {
-            case "O' Atar":
-                return "Cost: 3 coins\n" +
-                       "Duration: 10 seconds\n\n" +
-                       "Disables Impact Wave effects for 10 seconds. " +
-                       "During this time, impact waves that normally damage packets " +
-                       "will not affect any packets in the network.";
-                       
-            case "O' Airyaman":
-                return "Cost: 4 coins\n" +
-                       "Duration: 5 seconds\n\n" +
-                       "Disables packet collisions for 5 seconds. " +
-                       "During this time, packets can pass through each other " +
-                       "without causing damage or interference.";
-                       
-            case "O' Anahita":
-                return "Cost: 5 coins\n" +
-                       "Effect: Instant\n\n" +
-                       "Instantly removes all noise from every packet " +
-                       "currently present in the network. This improves " +
-                       "the quality and reliability of all active packets.";
-                       
-            case "Scroll of Aergia":
-                return "Cost: 10 coins\n" +
-                       "Effect: Adds 1 Aergia scroll to your inventory.\n\n" +
-                       "Use Aergia from the game HUD to place a ❌ mark on a wire.\n" +
-                       "Packets crossing the mark will move at constant speed (no acceleration)\n" +
-                       "for 20 seconds. Cooldown: 20 seconds.";
-
-            default:
-                return "No description available for this item.";
-        }
-    }
 
     public Button getBuyButton() { return buyButton; }
-    public Button getInfoButton() { return infoButton; }
     public ShopItem getItem() { return item; }
 }

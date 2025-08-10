@@ -3,9 +3,6 @@ package config.levels;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Root object describing a single level.
- */
 public class LevelDefinition {
     private int schemaVersion = 1;
     private String id;

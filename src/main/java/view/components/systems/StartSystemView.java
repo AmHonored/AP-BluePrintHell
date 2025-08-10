@@ -25,16 +25,13 @@ public class StartSystemView extends SystemView {
     protected StackPane getSystemContent() {
         StackPane content = new StackPane();
         
-        // Create play button
         playButton = new Button();
         playButton.getStyleClass().add("play-button");
         playButton.setPrefSize(30, 30);
         
-        // Create play triangle
         playTriangle = new Polygon();
         playTriangle.getStyleClass().add("play-triangle");
         
-        // Triangle points for play icon (pointing right)
         playTriangle.getPoints().addAll(new Double[]{
             0.0, 0.0,    // Top vertex
             12.0, 6.0,   // Right vertex  
@@ -43,10 +40,8 @@ public class StartSystemView extends SystemView {
         
         playButton.setGraphic(playTriangle);
         
-        // Set initial disabled state
         updateButtonState(false);
         
-        // Add hover effects
         playButton.setOnMouseEntered(e -> {
             if (!playButton.isDisable()) {
                 playButton.setScaleX(1.1);
@@ -59,7 +54,6 @@ public class StartSystemView extends SystemView {
             playButton.setScaleY(1.0);
         });
         
-        // Set button action
         playButton.setOnAction(e -> handlePlayButtonClick());
         
         content.getChildren().add(playButton);
@@ -92,7 +86,6 @@ public class StartSystemView extends SystemView {
     }
     
     private void handlePlayButtonClick() {
-        // Check if all systems are ready before executing play action
         if (allSystemsReadyChecker != null && allSystemsReadyChecker.get() && playAction != null) {
             service.AudioManager.playButtonClick();
             playAction.run();

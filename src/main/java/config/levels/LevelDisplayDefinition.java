@@ -3,9 +3,6 @@ package config.levels;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * View-side display hints to preserve exact look across levels.
- */
 public class LevelDisplayDefinition {
     public static class GamePaneSize {
         private int width = 800;
@@ -18,7 +15,6 @@ public class LevelDisplayDefinition {
     }
 
     private GamePaneSize gamePane = new GamePaneSize();
-    /** Optional override of port sizes per shape. Keys: SQUARE, TRIANGLE, HEXAGON. */
     private Map<String, Double> portSizes = new HashMap<>();
 
     public GamePaneSize getGamePane() { return gamePane; }

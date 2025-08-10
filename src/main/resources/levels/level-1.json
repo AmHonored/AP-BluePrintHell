@@ -49,6 +49,7 @@
         { "id": "end_in2", "role": "INPUT", "shape": "TRIANGLE", "position": { "x": 610, "y": 240 } }
       ]
     }
-  ]
+  ],
+  "nextLevelId": "level-2"
 }
 

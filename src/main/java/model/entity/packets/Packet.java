@@ -5,7 +5,7 @@ import model.wire.Wire;
 import javafx.scene.shape.Shape;
 
 public abstract class Packet {
-    public static final int SIZE = 20; // Standard packet size for centering calculations
+    public static final int SIZE = 20; 
     
     private final String id;
     private final PacketType type;
@@ -30,7 +30,6 @@ public abstract class Packet {
     private boolean isTrojan = false;
     private boolean isBitFragment = false;
 
-    // Aergia effect state: if active, speed is frozen at aergiaFrozenSpeed until aergiaEffectEndNanos
     private double aergiaFrozenSpeed = -1.0;
     private long aergiaEffectEndNanos = 0L;
 
@@ -185,41 +184,24 @@ public abstract class Packet {
     }
 
     public boolean isDeflectionTooLarge() {
-        return Math.abs(deflectedX) >= 20.0 || Math.abs(deflectedY) >= 20.0; // Increased threshold for Level 2 visibility
+        return Math.abs(deflectedX) >= 20.0 || Math.abs(deflectedY) >= 20.0;
     }
 
-    /**
-     * Smoothly applies deflection over 100ms (100 steps, 1ms each).
-     * This is a stub; implement animation/timing in the manager or subclass as needed.
-     */
-    public void smoothDeflecting(double totalDx, double totalDy) {
-        // To be implemented: animate deflection over time
-        applyDeflection(totalDx, totalDy);
-    }
+    
 
     public void setNoise(int noise) { this.noise = noise; }
     
     public int getNoise() { return this.noise; }
 
-    /**
-     * Check if this packet is a trojan packet
-     * @return true if the packet is a trojan, false otherwise
-     */
     public boolean isTrojan() {
         return isTrojan;
     }
 
-    /**
-     * Set the trojan status of this packet
-     * @param trojan true to make this packet a trojan, false to make it normal
-     */
     public void setTrojan(boolean trojan) {
         this.isTrojan = trojan;
     }
 
-    /**
-     * Convert this packet to a trojan packet
-     */
+
     public void convertToTrojan() {
         this.isTrojan = true;
     }
@@ -238,21 +220,14 @@ public abstract class Packet {
     }
 
     public void setAergiaFreeze(double frozenSpeed, long effectEndNanos) {
-        double oldSpeed = this.getSpeed();
         this.aergiaFrozenSpeed = frozenSpeed;
         this.aergiaEffectEndNanos = effectEndNanos;
-        double remainingSec = Math.max(0, (effectEndNanos - java.lang.System.nanoTime()) / 1_000_000_000.0);
-        java.lang.System.out.println("DEBUG: AERGIA FREEZE APPLIED → packet=" + id + 
-            ", originalSpeed=" + String.format("%.2f", oldSpeed) +
-            ", frozenSpeed=" + String.format("%.2f", frozenSpeed) + 
-            ", remainingSec≈" + String.format("%.1f", remainingSec));
     }
 
     public void clearAergiaFreezeIfExpired() {
         if (aergiaFrozenSpeed >= 0.0 && java.lang.System.nanoTime() >= aergiaEffectEndNanos) {
             aergiaFrozenSpeed = -1.0;
             aergiaEffectEndNanos = 0L;
-            java.lang.System.out.println("DEBUG: AERGIA FREEZE EXPIRED → packet=" + id);
         }
     }
 
@@ -265,34 +240,41 @@ public abstract class Packet {
         return aergiaEffectEndNanos;
     }
 
-    /**
-     * Take damage and reduce health
-     */
+    protected boolean isAergiaApplicable() { return false; }
+
+    protected double computeBaseSpeed(double currentSpeed, double deltaTimeSeconds, boolean compatiblePort) {
+        return currentSpeed;
+    }
+
+    protected final double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    protected final double finalizeSpeed(double proposedSpeed, double minSpeed, double maxSpeed) {
+        double clamped = clamp(proposedSpeed, minSpeed, maxSpeed);
+        if (isAergiaApplicable() && isAergiaFrozenActive()) {
+            double frozen = getAergiaFrozenSpeedOrNegative();
+            if (frozen >= 0.0) {
+                return frozen;
+            }
+        }
+        return clamped;
+    }
+
+    protected final double computeUpdatedSpeed(double currentSpeed, double deltaTimeSeconds, boolean compatiblePort, double minSpeed, double maxSpeed) {
+        double proposed = computeBaseSpeed(currentSpeed, deltaTimeSeconds, compatiblePort);
+        return finalizeSpeed(proposed, minSpeed, maxSpeed);
+    }
+
     public void takeDamage(int damage) {
-        int oldHealth = this.currentHealth;
         this.currentHealth -= damage;
         if (this.currentHealth < 0) {
             this.currentHealth = 0;
         }
-        
-        // Enhanced health update logging
-        if (this.currentHealth <= 0) {
-            System.out.println("💀 PACKET DESTROYED: " + this.id + " (" + this.type + ") - Health: " + oldHealth + " → 0");
-        } else {
-            System.out.println("💔 PACKET DAMAGE: " + this.id + " (" + this.type + ") - Health: " + oldHealth + " → " + this.currentHealth);
-        }
     }
 
-    /**
-     * Returns the collision shape for this packet.
-     * Subclasses must implement this to define their collision geometry.
-     */
     public abstract Shape getCollisionShape();
 
-    /**
-     * Unified collision detection using JavaFX Shape.intersect.
-     * No type-checking needed - works with any packet type.
-     */
     public boolean intersects(Packet other) {
         Shape intersection = Shape.intersect(this.getCollisionShape(), other.getCollisionShape());
         return intersection.getBoundsInLocal().getWidth() > 0 && intersection.getBoundsInLocal().getHeight() > 0;

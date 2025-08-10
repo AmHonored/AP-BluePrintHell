@@ -3,14 +3,11 @@ package config.levels;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Index file listing available levels and their resource paths.
- */
 public class LevelIndex {
     public static class Entry {
         private String id;
         private String name;
-        private String path; // classpath resource path to the level definition JSON
+        private String path; 
 
         public String getId() { return id; }
         public void setId(String id) { this.id = id; }

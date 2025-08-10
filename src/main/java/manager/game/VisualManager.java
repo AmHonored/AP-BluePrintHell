@@ -5,19 +5,10 @@ import javafx.stage.Stage;
 import view.menu.MenuScene;
 import view.menu.LevelSelectScene;
 import view.menu.SettingsScene;
-// import view.game.GameScene; // not used
-// import model.levels.Level; // not used
-// import controller.GameController; // not used
-// import manager.game.LevelManager; // class in same package
 
-/**
- * VisualManager handles all scene and navigation logic for Blueprint Hell.
- * Follows SOLID and clean code principles. No business logic, just navigation/state.
- */
 public class VisualManager {
     private final Stage primaryStage;
     private final String cssFile;
-    private boolean level2Unlocked = true; // Unlocked by default for testing
     private double soundVolume = 100.0;
     private static final int WINDOW_WIDTH = 800;
     private static final int WINDOW_HEIGHT = 600;
@@ -37,21 +28,27 @@ public class VisualManager {
         return cssFile;
     }
 
-    /**
-     * Show the main menu scene.
-     */
+    public void showLevelView(view.components.levels.LevelView levelView) {
+        Scene scene = new Scene(levelView, WINDOW_WIDTH, WINDOW_HEIGHT);
+        scene.getStylesheets().add(cssFile);
+        primaryStage.setScene(scene);
+    }
+
     public void showMenu() {
+
+        if (levelManager != null) {
+            levelManager.stopCurrentGame();
+        }
         MenuScene menuRoot = new MenuScene();
         Scene menuScene = new Scene(menuRoot, WINDOW_WIDTH, WINDOW_HEIGHT);
         menuScene.getStylesheets().add(cssFile);
         primaryStage.setScene(menuScene);
         
-        // Start menu music
         service.AudioManager.playMenuMusic();
 
         menuRoot.getStartGameButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
-            levelManager.showLevel(1);
+            levelManager.showResumeOrFirstLevel();
         });
         menuRoot.getLevelSelectButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
@@ -63,15 +60,15 @@ public class VisualManager {
         });
         menuRoot.getExitButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
+            if (levelManager != null) {
+                levelManager.stopCurrentGame();
+            }
             primaryStage.close();
         });
     }
 
-    /**
-     * Show the level select scene.
-     */
     public void showLevelSelect() {
-        LevelSelectScene levelSelectRoot = new LevelSelectScene(level2Unlocked);
+        LevelSelectScene levelSelectRoot = new LevelSelectScene();
         Scene levelSelectScene = new Scene(levelSelectRoot, WINDOW_WIDTH, WINDOW_HEIGHT);
         levelSelectScene.getStylesheets().add(cssFile);
         primaryStage.setScene(levelSelectScene);
@@ -82,7 +79,7 @@ public class VisualManager {
         });
         levelSelectRoot.getLevel2Button().setOnAction(e -> {
             service.AudioManager.playButtonClick();
-            if (level2Unlocked) levelManager.showLevel(2);
+            levelManager.showLevel(2);
         });
         levelSelectRoot.getLevel3Button().setOnAction(e -> {
             service.AudioManager.playButtonClick();
@@ -100,39 +97,16 @@ public class VisualManager {
             service.AudioManager.playButtonClick();
             levelManager.showLevel(6);
         });
-        levelSelectRoot.getLevel7Button().setOnAction(e -> {
+        levelSelectRoot.getDistributeAndMergeButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
             levelManager.showLevel(7);
         });
-        try {
-            java.lang.reflect.Method m = levelSelectRoot.getClass().getMethod("getLevel8Button");
-            javafx.scene.control.Button level8Btn = (javafx.scene.control.Button) m.invoke(levelSelectRoot);
-            if (level8Btn != null) {
-                level8Btn.setOnAction(e -> {
-                    service.AudioManager.playButtonClick();
-                    levelManager.showLevel(8);
-                });
-            }
-        } catch (Throwable ignored) {}
-        try {
-            java.lang.reflect.Method m = levelSelectRoot.getClass().getMethod("getLevel9Button");
-            javafx.scene.control.Button level9Btn = (javafx.scene.control.Button) m.invoke(levelSelectRoot);
-            if (level9Btn != null) {
-                level9Btn.setOnAction(e -> {
-                    service.AudioManager.playButtonClick();
-                    levelManager.showLevel(9);
-                });
-            }
-        } catch (Throwable ignored) {}
         levelSelectRoot.getBackButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
             showMenu();
         });
     }
 
-    /**
-     * Show the settings scene.
-     */
     public void showSettings() {
         SettingsScene settingsRoot = new SettingsScene(soundVolume);
         Scene settingsScene = new Scene(settingsRoot, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -149,27 +123,4 @@ public class VisualManager {
             showMenu();
         });
     }
-
-    /**
-     * Show the game scene for the given level number.
-     * @deprecated Use levelManager.showLevel() instead
-     */
-    @Deprecated
-    public void showGame(int levelNumber) {
-        levelManager.showLevel(levelNumber);
-    }
-
-    /**
-     * Unlock Level 2 (call this after Level 1 is completed).
-     */
-    public void unlockLevel2() {
-        level2Unlocked = true;
-    }
-
-    /**
-     * Get the current sound volume (0-100).
-     */
-    public double getSoundVolume() {
-        return soundVolume;
-    }
-} 
+}

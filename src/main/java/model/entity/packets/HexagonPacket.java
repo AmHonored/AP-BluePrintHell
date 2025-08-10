@@ -6,8 +6,8 @@ import javafx.scene.shape.Shape;
 import model.logic.packet.PacketState;
 
 public class HexagonPacket extends Packet {
-    private static final double BASE_SPEED = 50.0;  // Increased to trigger VPN disable (> 75)
-    private static final double MAX_SPEED = 120.0;  // Increased proportionally
+    private static final double BASE_SPEED = 50.0; 
+    private static final double MAX_SPEED = 120.0;  
     private static final double MIN_SPEED = 20.0;
     private static final double ACCELERATION = 20.0;
     private static final double DECELERATION = 15.0;
@@ -25,8 +25,6 @@ public class HexagonPacket extends Packet {
     public void updateMovement(double deltaTimeSeconds, boolean compatiblePort) {
         super.updateMovement(deltaTimeSeconds, compatiblePort);
         
-        PacketState previousState = movementState;
-        
         if (movementState == PacketState.FORWARD) {
             updateForwardMovement(deltaTimeSeconds, compatiblePort);
         } else {
@@ -35,41 +33,24 @@ public class HexagonPacket extends Packet {
     }
 
     private void updateForwardMovement(double deltaTimeSeconds, boolean compatiblePort) {
-        // Respect Aergia freeze if active: force constant speed
-        if (isAergiaFrozenActive()) {
-            double frozen = getAergiaFrozenSpeedOrNegative();
-            if (frozen >= 0.0) {
-                currentSpeed = frozen;
-            }
-        } else {
-            // HexagonPacket: Accelerate on compatible ports, decelerate on incompatible ports
-            if (compatiblePort) {
-                // Accelerate on compatible ports
-                currentSpeed += ACCELERATION * deltaTimeSeconds;
-                if (currentSpeed > MAX_SPEED) {
-                    currentSpeed = MAX_SPEED;
-                }
-            } else {
-                // Decelerate on incompatible ports
-                currentSpeed -= DECELERATION * deltaTimeSeconds;
-                if (currentSpeed < MIN_SPEED) {
-                    currentSpeed = MIN_SPEED;
-                }
-            }
-        }
+        currentSpeed = computeUpdatedSpeed(
+            currentSpeed,
+            deltaTimeSeconds,
+            compatiblePort,
+            MIN_SPEED,
+            MAX_SPEED
+        );
         distanceTraveled += currentSpeed * deltaTimeSeconds;
     }
 
     private void updateReturningMovement(double deltaTimeSeconds) {
-        // When returning, use base speed for consistent movement
         currentSpeed = BASE_SPEED;
         distanceTraveled -= currentSpeed * deltaTimeSeconds;
      
-        // When we reach the start, switch back to forward movement
         if (distanceTraveled <= 0) {
             distanceTraveled = 0;
             movementState = PacketState.FORWARD;
-            currentSpeed = BASE_SPEED; // Reset speed when starting forward again
+            currentSpeed = BASE_SPEED; 
         }
     }
 
@@ -112,16 +93,22 @@ public class HexagonPacket extends Packet {
     }
 
     @Override
+    protected boolean isAergiaApplicable() { return true; }
+
+    @Override
+    protected double computeBaseSpeed(double current, double dt, boolean compatible) {
+        return compatible ? current + ACCELERATION * dt : current - DECELERATION * dt;
+    }
+
+    @Override
     public Shape getCollisionShape() {
-        // Create hexagon collision shape
         Polygon hexagon = new Polygon();
         double centerX = getPosition().getX();
         double centerY = getPosition().getY();
-        double radius = 8.0; // Visual size for collision detection
+        double radius = 8.0;
         
-        // Create a regular hexagon (6 sides, 60° angles)
         for (int i = 0; i < 6; i++) {
-            double angle = i * Math.PI / 3; // 60 degrees each
+            double angle = i * Math.PI / 3; 
             double x = centerX + radius * Math.cos(angle);
             double y = centerY + radius * Math.sin(angle);
             hexagon.getPoints().addAll(x, y);

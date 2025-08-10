@@ -1,11 +1,12 @@
 package serialization.save;
 
 public class SystemSave {
-    public String id;      // matches config id
-    public String type;    // SystemType name
+    public String id;    
+    public String type;    
     public double x;
     public double y;
-    public boolean ready;
+    public Integer packetsGeneratedCount; 
+    public Integer maxPacketsToGenerate;      
 }
 
 

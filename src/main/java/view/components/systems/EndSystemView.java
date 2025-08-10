@@ -21,7 +21,6 @@ public class EndSystemView extends SystemView {
     protected StackPane getSystemContent() {
         StackPane content = new StackPane();
         
-        // Add END label inside the system
         endLabel = new Label("END");
         endLabel.getStyleClass().add("system-label");
         endLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");

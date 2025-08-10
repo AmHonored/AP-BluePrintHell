@@ -1,18 +1,13 @@
 package service;
 
-import controller.GameController;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.util.Duration;
 import javafx.scene.layout.Pane;
 import javafx.geometry.Point2D;
-import manager.game.LevelManager;
 import manager.packets.PacketManager;
 import model.entity.packets.Packet;
 import model.entity.packets.PacketType;
@@ -20,43 +15,24 @@ import model.entity.ports.Port;
 import model.entity.systems.IntermediateSystem;
 import model.entity.systems.System;
 import model.levels.Level;
-import model.logic.Shop.AergiaLogic;
+import model.logic.Shop.Aergia;
+import model.logic.Shop.Eliphas;
 import model.wire.Wire;
 import repository.SaveRepository;
 import repository.json.JsonSaveRepository;
 import serialization.save.*;
 
-/**
- * Handles building save-game snapshots and restoring them.
- * Keep code straightforward and readable; avoid over-optimization.
- */
 public class SaveService {
     private final SaveRepository repository;
-    private final String defaultProfileId;
-
-    private Timeline autosaveTimeline;
 
     public SaveService() {
-        this(new JsonSaveRepository(Paths.get("saves")), "default");
+        this(new JsonSaveRepository(Paths.get("saves")));
     }
 
-    public SaveService(SaveRepository repository, String defaultProfileId) {
+    public SaveService(SaveRepository repository) {
         this.repository = repository;
-        this.defaultProfileId = defaultProfileId;
     }
 
-    public void attachAutosave(Level level, String levelId, double intervalSeconds) {
-        if (autosaveTimeline != null) {
-            autosaveTimeline.stop();
-        }
-        autosaveTimeline = new Timeline(new KeyFrame(Duration.seconds(intervalSeconds), e -> saveNow(level, defaultProfileId, levelId)));
-        autosaveTimeline.setCycleCount(Timeline.INDEFINITE);
-        autosaveTimeline.play();
-    }
-
-    public void stopAutosave() {
-        if (autosaveTimeline != null) autosaveTimeline.stop();
-    }
 
     public void saveNow(Level level, String profileId, String levelId) {
         SaveGame root = new SaveGame();
@@ -72,34 +48,31 @@ public class SaveService {
         return repository.loadLatest(profileId, levelId).map(s -> s.level);
     }
 
-    /**
-     * Apply core dynamic state only. This keeps implementation minimal and safe to call
-     * before controllers/managers are initialized. Full reconstruction (wires/packets)
-     * can be layered later after views/managers exist.
-     */
+    public void deleteSave(String profileId, String levelId) {
+        repository.delete(profileId, levelId);
+    }
+
     public void applyBasicToLevel(Level level, LevelSave save) {
         if (level == null || save == null) return;
 
-        // Game state
         if (save.gameState != null) {
             level.setPaused(save.gameState.paused);
             level.setGameOver(save.gameState.gameOver);
             level.setGameStarted(save.gameState.gameStarted);
             level.setCurrentTime(save.gameState.currentTime);
+            level.setLevelCompleted(save.gameState.levelCompleted);
 
             int currentCoins = level.getCoins();
             int targetCoins = save.gameState.coins;
             if (targetCoins > currentCoins) {
                 level.addCoins(targetCoins - currentCoins);
             } else if (targetCoins < currentCoins) {
-                // Use GameState API to subtract since Level doesn't expose subtract
                 level.getGameState().subtractCoins(currentCoins - targetCoins);
             }
         }
 
-        // Level state
         if (save.levelState != null) {
-            // Adjust remaining wire length by diff
+
             double currentRemaining = level.getRemainingWireLength();
             double targetRemaining = save.levelState.remainingWireLength;
             if (targetRemaining > currentRemaining) {
@@ -107,7 +80,7 @@ public class SaveService {
             } else if (targetRemaining < currentRemaining) {
                 level.subtractWireLength(currentRemaining - targetRemaining);
             }
-            // Stats
+
             while (level.getPacketsGenerated() < save.levelState.packetsGenerated) level.incrementPacketsGenerated();
             while (level.getPacketLoss() < save.levelState.packetLoss) level.incrementPacketLoss();
             while (level.getPacketsCollected() < save.levelState.packetsCollected) level.incrementPacketsCollected();
@@ -122,7 +95,6 @@ public class SaveService {
             }
         }
 
-        // Inventory/effects exact restoration
         int deltaA = save.aergiaScrolls - level.getAergiaScrolls();
         if (deltaA != 0) level.addAergiaScrolls(deltaA);
         int deltaS = save.sisyphusScrolls - level.getSisyphusScrolls();
@@ -134,16 +106,11 @@ public class SaveService {
         if (save.aergiaSecondsRemaining > 0) {
             level.setAergiaCooldownEnd(now + (long) (save.aergiaSecondsRemaining * 1_000_000_000L));
         }
-        // Marks will be reconstructed in full restore step (future); skipping here keeps it simple.
     }
 
-    /**
-     * Apply saved system positions and adjust their ports by the same delta
-     * so wires and hitboxes remain aligned.
-     */
     public void applySystemPositions(Level level, LevelSave save) {
         if (level == null || save == null || save.systems == null) return;
-        // Index systems by stable id
+
         Map<String, System> systemsById = new HashMap<>();
         for (System s : level.getSystems()) {
             if (s.getId() != null) systemsById.put(s.getId(), s);
@@ -159,12 +126,24 @@ public class SaveService {
             double dy = target.getY() - current.getY();
             if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) continue;
             sys.setPosition(target);
-            // Move all ports by the same delta
+
             for (Port p : sys.getInPorts()) {
                 p.setPosition(new javafx.geometry.Point2D(p.getPosition().getX() + dx, p.getPosition().getY() + dy));
             }
             for (Port p : sys.getOutPorts()) {
                 p.setPosition(new javafx.geometry.Point2D(p.getPosition().getX() + dx, p.getPosition().getY() + dy));
+            }
+
+            if (sys instanceof model.entity.systems.StartSystem) {
+                model.entity.systems.StartSystem start = (model.entity.systems.StartSystem) sys;
+                if (ss.maxPacketsToGenerate != null) start.setMaxPacketsToGenerate(ss.maxPacketsToGenerate);
+                if (ss.packetsGeneratedCount != null) {
+                    int existingGenerated = start.getGeneratedPacketCount();
+                    int desiredGenerated = Math.max(0, ss.packetsGeneratedCount);
+                    for (int i = existingGenerated; i < desiredGenerated; i++) {
+                        start.onPacketGenerated();
+                    }
+                }
             }
         }
     }
@@ -172,16 +151,15 @@ public class SaveService {
     private LevelSave snapshotLevel(Level level) {
         LevelSave out = new LevelSave();
 
-        // Game state
         GameStateSave gs = new GameStateSave();
         gs.paused = level.isPaused();
         gs.gameOver = level.isGameOver();
         gs.gameStarted = level.isGameStarted();
         gs.currentTime = level.getCurrentTime();
         gs.coins = level.getCoins();
+        gs.levelCompleted = level.isLevelCompleted();
         out.gameState = gs;
 
-        // Level state
         LevelStateSave ls = new LevelStateSave();
         ls.remainingWireLength = level.getRemainingWireLength();
         ls.packetsGenerated = level.getPacketsGenerated();
@@ -198,14 +176,13 @@ public class SaveService {
         } catch (Throwable ignored) {}
         out.levelState = ls;
 
-        // Inventory/effects
         out.aergiaScrolls = level.getAergiaScrolls();
         long now = java.lang.System.nanoTime();
         long cooldownEnd = level.getAergiaCooldownEnd();
         out.aergiaSecondsRemaining = cooldownEnd > now ? (cooldownEnd - now) / 1_000_000_000.0 : 0.0;
 
         out.aergiaMarks = new java.util.ArrayList<>();
-        for (AergiaLogic.AergiaMark m : level.getAergiaMarks()) {
+        for (Aergia.AergiaMark m : level.getAergiaMarks()) {
             AergiaMarkSave ms = new AergiaMarkSave();
             ms.wireId = (m.wire != null ? m.wire.getId() : null);
             ms.progress = m.progress;
@@ -215,7 +192,7 @@ public class SaveService {
         out.sisyphusScrolls = level.getSisyphusScrolls();
         out.eliphasScrolls = level.getEliphasScrolls();
         out.eliphasMarks = new java.util.ArrayList<>();
-        for (model.logic.Shop.EliphasLogic.EliphasMark em : level.getEliphasMarks()) {
+        for (Eliphas.EliphasMark em : level.getEliphasMarks()) {
             EliphasMarkSave ems = new EliphasMarkSave();
             ems.wireId = (em.wire != null ? em.wire.getId() : null);
             ems.progress = em.progress;
@@ -223,7 +200,6 @@ public class SaveService {
             out.eliphasMarks.add(ems);
         }
 
-        // Systems
         out.systems = new java.util.ArrayList<>();
         for (System s : level.getSystems()) {
             SystemSave ss = new SystemSave();
@@ -231,31 +207,35 @@ public class SaveService {
             ss.type = s.getType().name();
             ss.x = s.getPosition().getX();
             ss.y = s.getPosition().getY();
-            ss.ready = s.isReady();
+
+            if (s instanceof model.entity.systems.StartSystem) {
+                model.entity.systems.StartSystem start = (model.entity.systems.StartSystem) s;
+                ss.packetsGeneratedCount = start.getGeneratedPacketCount();
+                ss.maxPacketsToGenerate = start.getMaxPacketsToGenerate();
+            }
             out.systems.add(ss);
         }
 
-        // Ports
-        out.ports = new java.util.ArrayList<>();
-        for (System s : level.getSystems()) {
-            for (Port p : s.getInPorts()) out.ports.add(portToSave(p, s));
-            for (Port p : s.getOutPorts()) out.ports.add(portToSave(p, s));
-        }
-
-        // Wires (collect via ConnectionManager if accessible, else via port references)
         out.wires = new java.util.ArrayList<>();
         java.util.Set<Wire> wires = new java.util.HashSet<>();
         for (System s : level.getSystems()) {
             for (Port p : s.getInPorts()) if (p.getWire() != null) wires.add(p.getWire());
             for (Port p : s.getOutPorts()) if (p.getWire() != null) wires.add(p.getWire());
         }
+
+        try {
+            wires.addAll(view.components.wires.WireView.getRegisteredWires());
+        } catch (Throwable ignored) {}
         for (Wire w : wires) {
             WireSave ws = new WireSave();
             ws.id = w.getId();
             ws.sourcePortId = w.getSource() != null ? w.getSource().getId() : null;
             ws.destPortId = w.getDest() != null ? w.getDest().getId() : null;
-            ws.active = w.isActive();
-            ws.massivePacketRunCount = w.getMassivePacketRunCount();
+
+            boolean isAttachedToPorts =
+                (w.getSource() != null && w.getSource().getWire() == w) &&
+                (w.getDest() != null && w.getDest().getWire() == w);
+            ws.active = isAttachedToPorts;
             ws.bendPoints = new java.util.ArrayList<>();
             for (Wire.BendPoint bp : w.getBendPoints()) {
                 WireSave.BendPointSave bps = new WireSave.BendPointSave();
@@ -267,13 +247,11 @@ public class SaveService {
             out.wires.add(ws);
         }
 
-        // Packets
         out.packets = new java.util.ArrayList<>();
         for (Packet p : level.getPackets()) {
             out.packets.add(packetToSave(p));
         }
 
-        // Queues
         out.systemPacketQueues = new HashMap<>();
         for (System s : level.getSystems()) {
             if (s instanceof IntermediateSystem) {
@@ -287,14 +265,9 @@ public class SaveService {
         return out;
     }
 
-    /**
-     * Restore wires (model + visuals) from a saved snapshot.
-     * Keeps it simple: sets wires on ports and draws basic WireView without extra callbacks.
-     */
     public void restoreWires(Level level, LevelSave save, Pane gamePane) {
         if (level == null || save == null || save.wires == null || gamePane == null) return;
 
-        // Build lookup of ports by id
         Map<String, Port> portById = new HashMap<>();
         for (System s : level.getSystems()) {
             for (Port p : s.getInPorts()) portById.put(p.getId(), p);
@@ -308,11 +281,9 @@ public class SaveService {
 
             Wire wire = new Wire(ws.id != null ? ws.id : java.util.UUID.randomUUID().toString(), src, dst);
             wire.setActive(ws.active);
-            // Attach to ports
             src.setWire(wire);
             dst.setWire(wire);
 
-            // Restore bend points
             if (ws.bendPoints != null) {
                 for (WireSave.BendPointSave bps : ws.bendPoints) {
                     Point2D pos = new Point2D(bps.x, bps.y);
@@ -321,20 +292,19 @@ public class SaveService {
                 }
             }
 
-            // Draw basic wire view
             try {
-                view.components.wires.WireView view = new view.components.wires.WireView(wire);
-                gamePane.getChildren().add(view);
+                view.components.wires.WireView wireView = new view.components.wires.WireView(wire);
+                if (!ws.active) view.components.wires.WireView.markDisabled(wire);
+                gamePane.getChildren().add(wireView);
             } catch (Throwable ignored) {
-                // If view cannot be created (e.g., not in JavaFX thread), skip visuals
             }
         }
-        // Recompute remaining wire length based on restored wires
+
         double used = 0.0;
         for (System s : level.getSystems()) {
             for (Port p : s.getInPorts()) if (p.getWire() != null) used += p.getWire().getLength();
         }
-        // Each wire counted once via input ports; ensure no double counting
+
         double targetRemaining = Math.max(0.0, level.getWireLength() - used);
         double currentRemaining = level.getRemainingWireLength();
         if (Math.abs(targetRemaining - currentRemaining) > 1e-6) {
@@ -343,21 +313,15 @@ public class SaveService {
         }
     }
 
-    /**
-     * Restore moving packets and system queues.
-     * This must be called after wires are restored so wire ids resolve.
-     */
     public void restorePackets(Level level, LevelSave save) {
         if (level == null || save == null) return;
 
-        // Build quick lookups
         Map<String, Wire> wireById = new HashMap<>();
         for (System s : level.getSystems()) {
             for (Port p : s.getInPorts()) if (p.getWire() != null) wireById.put(p.getWire().getId(), p.getWire());
             for (Port p : s.getOutPorts()) if (p.getWire() != null) wireById.put(p.getWire().getId(), p.getWire());
         }
 
-        // Recreate packets-in-network
         if (save.packets != null) {
             for (PacketSave ps : save.packets) {
                 Packet packet = createPacketFromSave(ps);
@@ -366,28 +330,25 @@ public class SaveService {
                 packet.setInSystem(ps.inSystem);
                 packet.setMoving(false);
 
-                // Aergia effect
                 if (ps.aergiaSecondsRemaining > 0.0) {
                     long end = java.lang.System.nanoTime() + (long)(ps.aergiaSecondsRemaining * 1_000_000_000L);
-                    double frozen = ps.aergiaFrozenSpeed >= 0.0 ? ps.aergiaFrozenSpeed : packet.getSpeed();
-                    packet.setAergiaFreeze(frozen, end);
+                    double aergiaSpeed = ps.aergiaFrozenSpeed >= 0.0 ? ps.aergiaFrozenSpeed : packet.getSpeed();
+                    packet.setAergiaFreeze(aergiaSpeed, end);
                 }
 
-                // If assigned to a wire and was moving, resume movement from saved progress
                 if (ps.currentWireId != null && ps.moving) {
                     Wire w = wireById.get(ps.currentWireId);
                     if (w != null) {
                         PacketManager.startMovement(packet, w, true);
-                        // Apply saved movement state
+
                         packet.setMovementProgress(ps.movementProgress);
                         long now = java.lang.System.nanoTime();
                         long start = now - (long)(ps.secondsSinceMovementStart * 1_000_000_000L);
                         packet.setMovementStartTime(start);
-                        // Set position to match progress
+
                         javafx.geometry.Point2D pos = w.getPositionAtProgress(ps.movementProgress);
                         packet.setPosition(pos);
 
-                        // Hexagon-specific fields
                         if (ps.type != null && ps.type.contains("HEXAGON")) {
                             double total = w.getLength();
                             trySetDouble(packet, "totalPathLength", total);
@@ -407,9 +368,7 @@ public class SaveService {
             }
         }
 
-        // Restore system queues (Intermediate, etc.)
         if (save.systemPacketQueues != null) {
-            // Map packets by id from level list
             Map<String, Packet> byId = new HashMap<>();
             for (Packet p : level.getPackets()) byId.put(p.getId(), p);
 
@@ -429,6 +388,40 @@ public class SaveService {
         }
     }
 
+    public void restoreMarks(Level level, LevelSave save) {
+        if (level == null || save == null) return;
+
+        Map<String, Wire> wireById = new HashMap<>();
+        for (System s : level.getSystems()) {
+            for (Port p : s.getInPorts()) if (p.getWire() != null) wireById.put(p.getWire().getId(), p.getWire());
+            for (Port p : s.getOutPorts()) if (p.getWire() != null) wireById.put(p.getWire().getId(), p.getWire());
+        }
+
+        long now = java.lang.System.nanoTime();
+
+        // Aergia marks
+        if (save.aergiaMarks != null) {
+            for (AergiaMarkSave ms : save.aergiaMarks) {
+                if (ms == null || ms.wireId == null) continue;
+                Wire w = wireById.get(ms.wireId);
+                if (w == null) continue;
+                long end = now + (long) (Math.max(0.0, ms.secondsRemaining) * 1_000_000_000L);
+                level.getAergiaMarks().add(new Aergia.AergiaMark(w, ms.progress, end));
+            }
+        }
+
+        // Eliphas marks
+        if (save.eliphasMarks != null) {
+            for (EliphasMarkSave ms : save.eliphasMarks) {
+                if (ms == null || ms.wireId == null) continue;
+                Wire w = wireById.get(ms.wireId);
+                if (w == null) continue;
+                long end = now + (long) (Math.max(0.0, ms.secondsRemaining) * 1_000_000_000L);
+                level.getEliphasMarks().add(new Eliphas.EliphasMark(w, ms.progress, end));
+            }
+        }
+    }
+
     private Packet createPacketFromSave(PacketSave s) {
         if (s == null || s.type == null || s.id == null) return null;
         javafx.geometry.Point2D pos = new javafx.geometry.Point2D(s.x, s.y);
@@ -441,6 +434,32 @@ public class SaveService {
                     return new model.entity.packets.TrianglePacket(s.id, pos, dir);
                 case HEXAGON:
                     return new model.entity.packets.HexagonPacket(s.id, pos, dir);
+                case PROTECTED: {
+                    model.entity.packets.PacketType original = model.entity.packets.PacketType.SQUARE;
+                    if (s.extra != null && s.extra.get("originalType") instanceof String) {
+                        try {
+                            original = model.entity.packets.PacketType.valueOf((String) s.extra.get("originalType"));
+                        } catch (IllegalArgumentException ignored) {}
+                    }
+                    return new model.entity.packets.ProtectedPacket(s.id, pos, dir, original);
+                }
+                case CONFIDENTIAL_TYPE1:
+                    return new model.entity.packets.ConfidentialPacket.Type1(s.id, pos, dir);
+                case CONFIDENTIAL_TYPE2:
+                    return new model.entity.packets.ConfidentialPacket.Type2(s.id, pos, dir);
+                case MASSIVE_TYPE1: {
+                    model.entity.packets.MassivePacket.Type1 pkt = new model.entity.packets.MassivePacket.Type1(s.id, pos, dir);
+                    if (s.extra != null && s.extra.get("currentSpeed") instanceof Number) {
+                        trySetDouble(pkt, "currentSpeed", ((Number) s.extra.get("currentSpeed")).doubleValue());
+                    }
+                    return pkt;
+                }
+                case MASSIVE_TYPE2:
+                    return new model.entity.packets.MassivePacket.Type2(s.id, pos, dir);
+                case BIT_CIRCLE:
+                    return new model.entity.packets.bits.BitCirclePacket(s.id, pos, dir);
+                case BIT_RECT:
+                    return new model.entity.packets.bits.BitRectPacket(s.id, pos, dir);
                 default:
                     return new model.entity.packets.SquarePacket(s.id, pos, dir);
             }
@@ -457,35 +476,15 @@ public class SaveService {
         } catch (ReflectiveOperationException ignored) {}
     }
 
-    private void trySetEnum(Object obj, String field, String enumName) {
+    private <E extends Enum<E>> void trySetEnum(Object obj, String field, String enumName) {
         try {
             java.lang.reflect.Field f = obj.getClass().getDeclaredField(field);
-            f.setAccessible(true);
-            Class<?> enumType = f.getType();
-            Object enumValue = java.lang.Enum.valueOf((Class) enumType, enumName);
+            f.setAccessible(true); // make a field accessible
+            @SuppressWarnings("unchecked")
+            Class<E> enumClass = (Class<E>) f.getType();
+            E enumValue = java.lang.Enum.valueOf(enumClass, enumName);
             f.set(obj, enumValue);
         } catch (ReflectiveOperationException ignored) {}
-    }
-
-    private PortSave portToSave(Port p, System system) {
-        PortSave ps = new PortSave();
-        ps.id = p.getId();
-        ps.systemId = (system.getId() != null ? system.getId() : system.getType().name());
-        ps.role = p.getType().name();
-        ps.shapeKind = p.getShapeKind().name();
-        ps.x = p.getPosition().getX();
-        ps.y = p.getPosition().getY();
-        ps.wireId = p.getWire() != null ? p.getWire().getId() : null;
-        return ps;
-    }
-
-    private Wire findWireById(Level level, String wireId) {
-        // Currently wires aren't globally registered; derive from ports
-        for (System s : level.getSystems()) {
-            for (Port p : s.getInPorts()) if (p.getWire() != null && p.getWire().getId().equals(wireId)) return p.getWire();
-            for (Port p : s.getOutPorts()) if (p.getWire() != null && p.getWire().getId().equals(wireId)) return p.getWire();
-        }
-        return null;
     }
 
     private PacketSave packetToSave(Packet p) {
@@ -499,30 +498,15 @@ public class SaveService {
         s.currentHealth = p.getCurrentHealth();
         s.inSystem = p.isInSystem();
         s.moving = p.isMoving();
-        if (p.getStartPosition() != null) {
-            s.startX = p.getStartPosition().getX();
-            s.startY = p.getStartPosition().getY();
-        }
-        if (p.getTargetPosition() != null) {
-            s.targetX = p.getTargetPosition().getX();
-            s.targetY = p.getTargetPosition().getY();
-        }
         s.currentWireId = p.getCurrentWire() != null ? p.getCurrentWire().getId() : null;
         s.movementProgress = p.getMovementProgress();
         long now = java.lang.System.nanoTime();
         long start = p.getMovementStartTime();
         s.secondsSinceMovementStart = start > 0 ? (now - start) / 1_000_000_000.0 : 0.0;
-        s.compatibleWithCurrentPort = p.isCompatibleWithCurrentPort();
-        s.deflectedX = p.getDeflectedX();
-        s.deflectedY = p.getDeflectedY();
-        s.noise = p.getNoise();
-        s.trojan = p.isTrojan();
-        s.bitFragment = p.isBitFragment();
         s.aergiaFrozenSpeed = p.getAergiaFrozenSpeedOrNegative();
         double aergiaRemaining = p.getAergiaEffectEndNanos() > now ? (p.getAergiaEffectEndNanos() - now) / 1_000_000_000.0 : 0.0;
         s.aergiaSecondsRemaining = Math.max(0.0, aergiaRemaining);
 
-        // Type-specific extras
         s.extra = new HashMap<>();
         if (p.getType() == PacketType.TRIANGLE) {
             s.extra.put("currentSpeed", tryGetDouble(p, "currentSpeed"));
@@ -531,12 +515,18 @@ public class SaveService {
             s.extra.put("movementState", tryGetEnumName(p, "movementState"));
             s.extra.put("distanceTraveled", tryGetDouble(p, "distanceTraveled"));
             s.extra.put("totalPathLength", tryGetDouble(p, "totalPathLength"));
+        } else if (p.getType() == PacketType.PROTECTED) {
+            try {
+                model.entity.packets.ProtectedPacket prot = (model.entity.packets.ProtectedPacket) p;
+                s.extra.put("originalType", prot.getOriginalType().name());
+            } catch (ClassCastException ignored) {}
+        } else if (p.getType() == PacketType.MASSIVE_TYPE1) {
+            s.extra.put("currentSpeed", tryGetDouble(p, "currentSpeed"));
         }
 
         return s;
     }
 
-    // Reflection helpers: keep simple; return null if not present
     private Double tryGetDouble(Object obj, String field) {
         try {
             java.lang.reflect.Field f = obj.getClass().getDeclaredField(field);

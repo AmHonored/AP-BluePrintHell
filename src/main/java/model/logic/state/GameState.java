@@ -5,13 +5,12 @@ public class GameState {
     private boolean gameOver = false;
     private boolean gameStarted = false;
     private int currentTime = 0;
-    private int coins = 20; // Give player 20 coins for testing
+    private int coins = 20; 
+    private boolean levelCompleted = false;
 
     public GameState() {
-        // Initialize with default values
     }
 
-    // Game flow state
     public boolean isPaused() {
         return paused || gameOver;
     }
@@ -37,7 +36,6 @@ public class GameState {
         this.gameStarted = gameStarted;
     }
 
-    // Time tracking
     public int getCurrentTime() {
         return currentTime;
     }
@@ -46,7 +44,6 @@ public class GameState {
         this.currentTime = currentTime;
     }
 
-    // Economy
     public int getCoins() {
         return coins;
     }
@@ -58,5 +55,14 @@ public class GameState {
     public void subtractCoins(int amount) {
         this.coins -= amount;
         if (this.coins < 0) this.coins = 0;
+    }
+
+    public boolean isLevelCompleted() {
+        return levelCompleted;
+    }
+
+    public void setLevelCompleted(boolean levelCompleted) {
+        this.levelCompleted = levelCompleted;
+        if (levelCompleted) this.paused = true;
     }
 }

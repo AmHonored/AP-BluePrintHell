@@ -10,6 +10,10 @@ import model.entity.packets.MassivePacket;
 import model.entity.packets.Packet;
 
 public class StartSystem extends System {
+
+    private int maxPacketsToGenerate = 8; 
+    private int generatedPacketCount = 0;
+
     public StartSystem(Point2D position) {
         super(position, SystemType.StartSystem);
     }
@@ -22,21 +26,22 @@ public class StartSystem extends System {
         if (!port.isConnected()) {
             return null;
         }
+        if (!canGenerateMore()) {
+            return null;
+        }
         
-        // Check if this port should generate a confidential packet (20% chance)
         if (port.shouldGenerateConfidentialPacket()) {
             return new ConfidentialPacket.Type1("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
         }
 
-        // Massive packets: each type has 10% chance (total massive chance 20%)
-        double r = Math.random();
-        if (r < 0.10) {
-            return new MassivePacket.Type1("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
-        } else if (r < 0.20) {
-            return new MassivePacket.Type2("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
+        if (port.shouldGenerateMassivePacket()) {
+            if (Math.random() < 0.5) {
+                return new MassivePacket.Type1("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
+            } else {
+                return new MassivePacket.Type2("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
+            }
         }
         
-        // Determine packet type by port class or property
         String portClass = port.getClass().getSimpleName().toLowerCase();
         if (portClass.contains("square")) {
             return new SquarePacket("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
@@ -46,6 +51,30 @@ public class StartSystem extends System {
             return new HexagonPacket("pkt-" + java.lang.System.nanoTime(), port.getPosition(), port.getPosition());
         }
         return null;
+    }
+
+    public void onPacketGenerated() {
+        generatedPacketCount++;
+    }
+
+    public boolean canGenerateMore() {
+        return maxPacketsToGenerate < 0 || generatedPacketCount < maxPacketsToGenerate;
+    }
+
+    public boolean isGenerationComplete() {
+        return maxPacketsToGenerate >= 0 && generatedPacketCount >= maxPacketsToGenerate;
+    }
+
+    public int getGeneratedPacketCount() {
+        return generatedPacketCount;
+    }
+
+    public int getMaxPacketsToGenerate() {
+        return maxPacketsToGenerate;
+    }
+
+    public void setMaxPacketsToGenerate(int maxPacketsToGenerate) {
+        this.maxPacketsToGenerate = maxPacketsToGenerate;
     }
 
     @Override

@@ -17,7 +17,6 @@ public class MergeSystemView extends SystemView {
 
     @Override
     protected void applySystemStyling() {
-        // Base like normal system + white glowing border to distinguish
         systemRectangle.getStyleClass().clear();
         systemRectangle.getStyleClass().add("system-normal");
         systemRectangle.setStyle(
@@ -35,12 +34,10 @@ public class MergeSystemView extends SystemView {
         VBox vbox = new VBox(5);
         vbox.setAlignment(Pos.CENTER);
         
-        // Create "Merge" label
         mergeLabel = new Label("Merge");
         mergeLabel.getStyleClass().add("system-label");
         mergeLabel.setStyle("-fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 14;");
         
-        // Create count labels for bit packets (use better symbols)
         circleCountLabel = new Label("● 0/8");
         circleCountLabel.getStyleClass().add("bit-count-label");
         circleCountLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 10;");
@@ -55,13 +52,9 @@ public class MergeSystemView extends SystemView {
         return content;
     }
     
-    /**
-     * Update the bit packet counts display
-     */
     public void updateCounts(int circleCount, int rectCount) {
         if (circleCountLabel != null) {
             circleCountLabel.setText("● " + circleCount + "/8");
-            // Highlight when ready to merge
             if (circleCount >= 8) {
                 circleCountLabel.setStyle("-fx-text-fill: #00ff00; -fx-font-size: 10; -fx-font-weight: bold;");
             } else {
@@ -71,7 +64,6 @@ public class MergeSystemView extends SystemView {
         
         if (rectCountLabel != null) {
             rectCountLabel.setText("■ " + rectCount + "/10");
-            // Highlight when ready to merge
             if (rectCount >= 10) {
                 rectCountLabel.setStyle("-fx-text-fill: #00ff00; -fx-font-size: 10; -fx-font-weight: bold;");
             } else {
@@ -79,10 +71,7 @@ public class MergeSystemView extends SystemView {
             }
         }
     }
-    
-    /**
-     * Get the underlying Merge system
-     */
+
     public MergeSystem getMergeSystem() {
         return (MergeSystem) system;
     }

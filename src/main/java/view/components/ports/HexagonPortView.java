@@ -5,10 +5,10 @@ import javafx.scene.paint.Color;
 import model.entity.ports.Port;
 
 public class HexagonPortView extends PortView {
-    private static final double PORT_SIZE = 6; // Reduced from 12 to 8 to make it smaller
+    private static final double PORT_SIZE = 6; // Hexagon radius in pixels
     private final Polygon hexagon;
 
-    public HexagonPortView(Port modelPort, boolean isInput) {
+    public HexagonPortView(Port modelPort) {
         super(modelPort);
         hexagon = new Polygon();
         
@@ -21,6 +21,7 @@ public class HexagonPortView extends PortView {
         }
         
         // Set colors: light gray for input, dark gray for output
+        boolean isInput = getModelPort().getType() == model.entity.ports.PortType.INPUT;
         hexagon.setFill(isInput ? Color.LIGHTGRAY : Color.DARKGRAY);
         hexagon.setStroke(Color.BLACK);
         hexagon.getStyleClass().add("port");

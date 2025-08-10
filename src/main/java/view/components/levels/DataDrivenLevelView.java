@@ -9,10 +9,6 @@ import view.components.ports.TrianglePortView;
 import view.components.ports.HexagonPortView;
 import view.components.systems.*;
 
-/**
- * A generic LevelView that renders systems and ports based on a LevelDefinition.
- * Not referenced by current game flow; safe to compile in isolation.
- */
 public class DataDrivenLevelView extends LevelView {
     private final LevelDefinition definition;
     private final java.util.List<SystemView> systemViews = new java.util.ArrayList<>();
@@ -54,9 +50,6 @@ public class DataDrivenLevelView extends LevelView {
         return null;
     }
 
-    /**
-     * Called by GameController to set up wire controller for all ports.
-     */
     public void setupWireControllerForPorts(controller.WireController wireController) {
         for (javafx.scene.Node node : gamePane.getChildren()) {
             if (node instanceof SystemView) {
@@ -65,9 +58,6 @@ public class DataDrivenLevelView extends LevelView {
         }
     }
 
-    /**
-     * Optional: update connection indicators after wiring changes.
-     */
     public void updateSystemIndicators() {
         boolean allReady = true;
         for (SystemView sv : systemViews) {
@@ -76,7 +66,7 @@ public class DataDrivenLevelView extends LevelView {
                 allReady = false;
             }
         }
-        // Update play button state(s) based on aggregate readiness
+
         for (SystemView sv : systemViews) {
             if (sv instanceof view.components.systems.StartSystemView) {
                 view.components.systems.StartSystemView startView = (view.components.systems.StartSystemView) sv;
@@ -85,9 +75,6 @@ public class DataDrivenLevelView extends LevelView {
         }
     }
 
-    /**
-     * Hook up the Start system play buttons to the controller and enable/disable based on connectivity.
-     */
     public void setupStartSystemPlayButtons(controller.GameController gameController) {
         boolean allReady = true;
         for (SystemView sv : systemViews) {
@@ -140,13 +127,29 @@ public class DataDrivenLevelView extends LevelView {
 
     @Override
     protected void restartLevel() {
-        // Defer to visual manager; not wired here to avoid changing game flow
-        visualManager.showMenu();
+        try {
+            new service.SaveService().deleteSave("default", level.getLevelState() != null && definition != null && definition.getId() != null ? definition.getId() : "level-1");
+        } catch (Throwable ignored) {}
+        manager.game.VisualManager vm = this.visualManager;
+        if (vm != null) {
+            new manager.game.LevelManager(vm, vm.getPrimaryStage(), vm.getCssFile()).showLevel(parseLevelNumberFromId());
+        }
     }
 
     @Override
     protected void goToNextLevel() {
-        visualManager.showMenu();
+        manager.game.VisualManager vm = this.visualManager;
+        if (vm != null) {
+            int next = parseLevelNumberFromId() + 1;
+            new manager.game.LevelManager(vm, vm.getPrimaryStage(), vm.getCssFile()).showLevel(next);
+        }
+    }
+
+    private int parseLevelNumberFromId() {
+        if (definition != null && definition.getId() != null && definition.getId().startsWith("level-")) {
+            try { return Integer.parseInt(definition.getId().substring(6)); } catch (NumberFormatException ignored) {}
+        }
+        return 1;
     }
 }
 

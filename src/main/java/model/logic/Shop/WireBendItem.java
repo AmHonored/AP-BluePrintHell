@@ -16,14 +16,10 @@ public class WireBendItem implements ShopItem {
     
     @Override
     public int getDurationSeconds() {
-        return 0; // Instant effect
+        return 0; 
     }
     
     @Override
     public void apply(Level level) {
-        // This item doesn't directly modify the level
-        // The actual bend point addition is handled by the WireView when purchased
-        // This just deducts the coin cost which is handled by ShopManager.purchase()
-        System.out.println("DEBUG: WireBendItem.apply() - Bend point purchase processed");
     }
 }

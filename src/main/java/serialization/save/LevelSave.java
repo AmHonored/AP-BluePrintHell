@@ -8,7 +8,7 @@ public class LevelSave {
     public LevelStateSave levelState;
 
     public int aergiaScrolls;
-    public double aergiaSecondsRemaining; // cooldown remaining
+    public double aergiaSecondsRemaining; 
     public List<AergiaMarkSave> aergiaMarks;
 
     public int sisyphusScrolls;
@@ -16,11 +16,9 @@ public class LevelSave {
     public List<EliphasMarkSave> eliphasMarks;
 
     public List<SystemSave> systems;
-    public List<PortSave> ports;
     public List<WireSave> wires;
     public List<PacketSave> packets;
 
-    // systemId -> ordered packetIds in storage queues
     public Map<String, List<String>> systemPacketQueues;
 }
 
