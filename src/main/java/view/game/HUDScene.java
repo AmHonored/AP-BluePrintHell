@@ -15,6 +15,7 @@ public class HUDScene extends VBox {
     private final StatsBox lossBox;
     private final StatsBox coinsBox;
     private final StatsBox packetsBox;
+    private final Label connectionLabel;
     private final javafx.scene.control.Button aergiaButton;
     private final javafx.scene.control.Button sisyphusButton;
     private final javafx.scene.control.Button eliphasButton;
@@ -41,25 +42,24 @@ public class HUDScene extends VBox {
         statsContainer.setSpacing(20);
         statsContainer.setAlignment(Pos.CENTER);
 
-        // Add individual stats to the container
+        // Left section: Wire and Loss stats
         HBox leftStats = new HBox();
         leftStats.setSpacing(15);
         leftStats.setAlignment(Pos.CENTER_LEFT);
         leftStats.getChildren().addAll(wireBox, lossBox);
 
-        // Center: Progress bar and time controls
+        // Center section: Progress bar and time controls
         VBox progressCenter = new VBox();
         progressCenter.setAlignment(Pos.CENTER);
         progressCenter.setSpacing(8);
         temporalProgress = new TemporalProgress(level);
         Label progressTitle = new Label("Level Progress");
         progressTitle.getStyleClass().addAll("stats-title", "progress-title");
-        Label timeLabel = new Label("Time: 0");
-        timeLabel.getStyleClass().add("time-label");
-        progressCenter.getChildren().addAll(progressTitle, temporalProgress, timeLabel);
+        progressCenter.getChildren().addAll(progressTitle, temporalProgress);
         progressBox.getChildren().clear();
         progressBox.getChildren().add(progressCenter);
 
+        // Right section: Coins and Packets
         HBox rightStats = new HBox();
         rightStats.setSpacing(15);
         rightStats.setAlignment(Pos.CENTER_RIGHT);
@@ -67,6 +67,11 @@ public class HUDScene extends VBox {
 
         // Add all stats to the main stats container
         statsContainer.getChildren().addAll(leftStats, progressBox, rightStats);
+
+        // Connection status (will be added to button container)
+        connectionLabel = new Label("Offline");
+        connectionLabel.getStyleClass().add("connection-status");
+        connectionLabel.setStyle("-fx-text-fill: #ff6666; -fx-font-size: 14px; -fx-font-weight: bold;");
 
         // Create toggle HUD button with enhanced styling
         toggleHudButton = new Button("Hide HUD");
@@ -91,11 +96,20 @@ public class HUDScene extends VBox {
         eliphasButton.getStyleClass().addAll("button", "eliphas-button");
         eliphasButton.setPrefWidth(120);
 
-        // Button container for centering
+        // Button container with connection status on the right
         HBox buttonContainer = new HBox();
         buttonContainer.setAlignment(Pos.CENTER);
-        buttonContainer.setSpacing(20);
-        buttonContainer.getChildren().addAll(toggleHudButton, aergiaButton, sisyphusButton, eliphasButton);
+        buttonContainer.setSpacing(10); // Reduced spacing to bring connection status closer
+        buttonContainer.setPadding(new Insets(8, 0, 0, 0)); // Small top padding
+        
+        // Main buttons
+        HBox leftButtons = new HBox();
+        leftButtons.setSpacing(15);
+        leftButtons.setAlignment(Pos.CENTER);
+        leftButtons.getChildren().addAll(toggleHudButton, aergiaButton, sisyphusButton, eliphasButton);
+        
+        // Add buttons and connection status directly to container
+        buttonContainer.getChildren().addAll(leftButtons, connectionLabel);
 
         // Add all components to the main VBox
         this.getChildren().addAll(statsContainer, buttonContainer);
@@ -160,4 +174,14 @@ public class HUDScene extends VBox {
     public Button getAergiaButton() { return aergiaButton; }
     public Button getSisyphusButton() { return sisyphusButton; }
     public Button getEliphasButton() { return eliphasButton; }
+
+    public void setConnectionStatus(boolean connected) {
+        if (connected) {
+            connectionLabel.setText("Online");
+            connectionLabel.setStyle("-fx-text-fill: #66ff66;");
+        } else {
+            connectionLabel.setText("Offline");
+            connectionLabel.setStyle("-fx-text-fill: #ff6666;");
+        }
+    }
 }

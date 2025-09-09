@@ -429,6 +429,45 @@ public class SaveService {
         }
     }
 
+    /**
+     * Restore Aergia and Eliphas marks so their effects persist across sessions.
+     * Must be called after wires are restored (needs wire lookups).
+     */
+    public void restoreMarks(Level level, LevelSave save) {
+        if (level == null || save == null) return;
+
+        // Build wire lookup by id
+        Map<String, Wire> wireById = new HashMap<>();
+        for (System s : level.getSystems()) {
+            for (Port p : s.getInPorts()) if (p.getWire() != null) wireById.put(p.getWire().getId(), p.getWire());
+            for (Port p : s.getOutPorts()) if (p.getWire() != null) wireById.put(p.getWire().getId(), p.getWire());
+        }
+
+        long now = java.lang.System.nanoTime();
+
+        // Aergia marks
+        if (save.aergiaMarks != null) {
+            for (AergiaMarkSave ms : save.aergiaMarks) {
+                if (ms == null || ms.wireId == null) continue;
+                Wire w = wireById.get(ms.wireId);
+                if (w == null) continue;
+                long end = now + (long) (Math.max(0.0, ms.secondsRemaining) * 1_000_000_000L);
+                level.getAergiaMarks().add(new AergiaLogic.AergiaMark(w, ms.progress, end));
+            }
+        }
+
+        // Eliphas marks
+        if (save.eliphasMarks != null) {
+            for (EliphasMarkSave ms : save.eliphasMarks) {
+                if (ms == null || ms.wireId == null) continue;
+                Wire w = wireById.get(ms.wireId);
+                if (w == null) continue;
+                long end = now + (long) (Math.max(0.0, ms.secondsRemaining) * 1_000_000_000L);
+                level.getEliphasMarks().add(new model.logic.Shop.EliphasLogic.EliphasMark(w, ms.progress, end));
+            }
+        }
+    }
+
     private Packet createPacketFromSave(PacketSave s) {
         if (s == null || s.type == null || s.id == null) return null;
         javafx.geometry.Point2D pos = new javafx.geometry.Point2D(s.x, s.y);

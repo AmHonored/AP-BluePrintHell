@@ -41,6 +41,10 @@ public class VisualManager {
      * Show the main menu scene.
      */
     public void showMenu() {
+        // Ensure any running game is stopped and crash autosave is halted/deleted
+        if (levelManager != null) {
+            levelManager.stopCurrentGame();
+        }
         MenuScene menuRoot = new MenuScene();
         Scene menuScene = new Scene(menuRoot, WINDOW_WIDTH, WINDOW_HEIGHT);
         menuScene.getStylesheets().add(cssFile);
@@ -53,6 +57,11 @@ public class VisualManager {
             service.AudioManager.playButtonClick();
             levelManager.showLevel(1);
         });
+        // Networking controls (simple):
+        try {
+            java.lang.reflect.Method m1 = menuRoot.getClass().getMethod("addConnectionControls");
+            m1.invoke(menuRoot);
+        } catch (Throwable ignored) {}
         menuRoot.getLevelSelectButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
             showLevelSelect();
@@ -63,6 +72,10 @@ public class VisualManager {
         });
         menuRoot.getExitButton().setOnAction(e -> {
             service.AudioManager.playButtonClick();
+            // Ensure any running game is cleanly stopped and crash-autosave halted
+            if (levelManager != null) {
+                levelManager.stopCurrentGame();
+            }
             primaryStage.close();
         });
     }
@@ -171,5 +184,10 @@ public class VisualManager {
      */
     public double getSoundVolume() {
         return soundVolume;
+    }
+
+    // Expose LevelManager for networking (run start/finish hooks)
+    public LevelManager getLevelManager() {
+        return levelManager;
     }
 } 

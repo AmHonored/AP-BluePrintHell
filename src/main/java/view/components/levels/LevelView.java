@@ -1,8 +1,14 @@
 package view.components.levels;
 
+import javafx.scene.Group;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.transform.Scale;
+import javafx.scene.control.Label;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import view.game.HUDScene;
 import view.game.GameButtons;
 import view.game.ShopScene;
@@ -18,14 +24,24 @@ public abstract class LevelView extends StackPane {
     
     // Common UI components
     protected Pane gamePane;
+	protected Pane worldContainer;
+	protected Group worldGroup;
     protected HUDScene hud;
     protected GameButtons controls;
     protected ShopScene shopOverlay;
     protected GameOverScene gameOverOverlay;
     protected LevelCompleteScene levelCompleteOverlay;
+	protected Pane zoomOverlay;
     
     // Managers
     protected ShopManager shopManager;
+
+	// Zoom state
+	private Scale worldScale;
+	private double currentZoom = 1.0;
+	private static final double MIN_ZOOM = 0.5;
+	private static final double MAX_ZOOM = 2.0;
+	private static final double ZOOM_STEP = 0.1;
 
     public LevelView(Level level, VisualManager visualManager) {
         this.level = level;
@@ -45,11 +61,18 @@ public abstract class LevelView extends StackPane {
     private void setupCommonUI() {
         BorderPane mainLayout = new BorderPane();
 
-        // Center game area
-        gamePane = new Pane();
-        gamePane.setPrefSize(800, 500);
-        gamePane.getStyleClass().add("game-pane");
-        mainLayout.setCenter(gamePane);
+		// Center game area (wrap in a group so we can apply a scale transform for zoom)
+		gamePane = new Pane();
+		gamePane.setPrefSize(800, 500);
+		gamePane.setStyle("-fx-background-color: transparent;");
+
+		worldGroup = new Group(gamePane);
+		worldScale = new Scale(currentZoom, currentZoom, 0, 0);
+		worldGroup.getTransforms().add(worldScale);
+		worldContainer = new Pane(worldGroup);
+		worldContainer.setPrefSize(800, 500);
+		worldContainer.getStyleClass().add("game-pane");
+		mainLayout.setCenter(worldContainer);
 
         // Top HUD
         hud = new HUDScene(level);
@@ -58,13 +81,117 @@ public abstract class LevelView extends StackPane {
         // Enable/disable Aergia button based on connections and inventory
         updateAergiaButtonState();
 
-        // Bottom controls
-        controls = new GameButtons();
+		// Bottom controls
+		controls = new GameButtons();
         controls.getStyleClass().add("controls-pane");
         mainLayout.setBottom(controls);
 
+		// Floating zoom overlay inside the game scene area (top-left)
+		zoomOverlay = createZoomOverlay();
+		zoomOverlay.setLayoutX(8);
+		zoomOverlay.setLayoutY(8);
+		worldContainer.getChildren().add(zoomOverlay);
+		zoomOverlay.toFront();
+		makeZoomOverlayDraggable();
+
         this.getChildren().add(mainLayout);
     }
+
+	private void zoomBy(double delta) {
+		double target = clamp(currentZoom + delta, MIN_ZOOM, MAX_ZOOM);
+		if (Math.abs(target - currentZoom) < 1e-9) return;
+		currentZoom = target;
+		if (worldScale != null) {
+			worldScale.setX(currentZoom);
+			worldScale.setY(currentZoom);
+		}
+	}
+
+	private Pane createZoomOverlay() {
+		Pane box = new Pane();
+		box.setPickOnBounds(true);
+		box.setMouseTransparent(false);
+		box.setPrefSize(36, 64);
+		box.setMinSize(36, 64);
+		box.setMaxSize(36, 64);
+
+		Rectangle bg = new Rectangle(36, 64);
+		bg.setArcWidth(8);
+		bg.setArcHeight(8);
+		bg.setFill(Color.rgb(15, 19, 25, 0.85));
+		bg.setStroke(Color.web("#00d4ff"));
+		bg.setStrokeWidth(1.0);
+
+		Line divider = new Line(0, 32, 36, 32);
+		divider.setStroke(Color.web("#00d4ff"));
+		divider.setOpacity(0.6);
+
+		Label plus = new Label("+");
+		plus.setTextFill(Color.WHITE);
+		plus.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+		plus.setLayoutX(12);
+		plus.setLayoutY(4);
+
+		Label minus = new Label("-");
+		minus.setTextFill(Color.WHITE);
+		minus.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+		minus.setLayoutX(14);
+		minus.setLayoutY(36);
+
+		Rectangle topHit = new Rectangle(36, 32);
+		topHit.setFill(Color.TRANSPARENT);
+		topHit.setOnMouseClicked(e -> zoomBy(ZOOM_STEP));
+
+		Rectangle bottomHit = new Rectangle(36, 32);
+		bottomHit.setLayoutY(32);
+		bottomHit.setFill(Color.TRANSPARENT);
+		bottomHit.setOnMouseClicked(e -> zoomBy(-ZOOM_STEP));
+
+		box.getChildren().addAll(bg, divider, plus, minus, topHit, bottomHit);
+		return box;
+	}
+
+	private void makeZoomOverlayDraggable() {
+		final double[] pressScene = new double[2];
+		final double[] startTranslate = new double[2];
+
+		zoomOverlay.setOnMousePressed(e -> {
+			pressScene[0] = e.getSceneX();
+			pressScene[1] = e.getSceneY();
+			startTranslate[0] = zoomOverlay.getTranslateX();
+			// If still bound to HUD height, unbind and lock current value so it can move
+			if (zoomOverlay.translateYProperty().isBound()) {
+				zoomOverlay.translateYProperty().unbind();
+				zoomOverlay.setTranslateY(hud.getHeight() + 8);
+			}
+			startTranslate[1] = zoomOverlay.getTranslateY();
+			e.consume();
+		});
+
+		zoomOverlay.setOnMouseDragged(e -> {
+			double dx = e.getSceneX() - pressScene[0];
+			double dy = e.getSceneY() - pressScene[1];
+			double targetX = startTranslate[0] + dx;
+			double targetY = startTranslate[1] + dy;
+
+			// Clamp within view bounds
+			double viewW = Math.max(1.0, this.getWidth());
+			double viewH = Math.max(1.0, this.getHeight());
+			double boxW = zoomOverlay.getWidth() > 0 ? zoomOverlay.getWidth() : 36;
+			double boxH = zoomOverlay.getHeight() > 0 ? zoomOverlay.getHeight() : 64;
+			double minY = Math.max(4, hud.getHeight() + 4);
+			targetX = clamp(targetX, 4, Math.max(4, viewW - boxW - 4));
+			targetY = clamp(targetY, minY, Math.max(minY, viewH - boxH - 4));
+
+			zoomOverlay.setTranslateX(targetX);
+			zoomOverlay.setTranslateY(targetY);
+			e.consume();
+		});
+	}
+
+	private double clamp(double v, double min, double max) {
+		return Math.max(min, Math.min(max, v));
+	}
 
     /**
      * Setup overlay components

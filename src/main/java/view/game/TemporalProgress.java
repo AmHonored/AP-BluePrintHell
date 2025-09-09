@@ -13,19 +13,20 @@ public class TemporalProgress extends HBox {
     private final Label timeLabel;
 
     public TemporalProgress(Level level) {
-        this.setSpacing(10);
+        this.setSpacing(8);
         this.setAlignment(Pos.CENTER);
         progressBar = new ProgressBar(0);
         progressBar.setPrefWidth(180);
+        progressBar.setPrefHeight(20);
         progressBar.getStyleClass().add("progress-bar");
         
-        thumb = new Circle(6);
+        thumb = new Circle(5);
         thumb.getStyleClass().add("temporal-thumb");
         
-        timeLabel = new Label("01:00");
+        timeLabel = new Label("Time: 0");
         timeLabel.getStyleClass().add("time-label");
         
-        this.getChildren().addAll(progressBar, thumb, timeLabel);
+        this.getChildren().addAll(progressBar, timeLabel);
     }
 
     public ProgressBar getProgressBar() { return progressBar; }

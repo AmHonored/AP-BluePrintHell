@@ -8,6 +8,8 @@ public class GameButtons extends HBox {
     private final Button shopButton;
     private final Button pauseButton;
     private final Button menuButton;
+    private final Button zoomInButton;
+    private final Button zoomOutButton;
     // Aergia moved to HUD
 
     public GameButtons() {
@@ -18,11 +20,18 @@ public class GameButtons extends HBox {
         shopButton = new Button("Shop");
         pauseButton = new Button("Pause");
         menuButton = new Button("Menu");
+        // Zoom buttons are now placed in LevelView overlay; keep instances for compatibility but hide
+        zoomOutButton = new Button("-");
+        zoomInButton = new Button("+");
+        zoomOutButton.setVisible(false);
+        zoomInButton.setVisible(false);
 
         // Remove inline styles - now using CSS classes
         shopButton.getStyleClass().add("button");
         pauseButton.getStyleClass().add("button");
         menuButton.getStyleClass().add("button");
+        zoomOutButton.getStyleClass().add("button");
+        zoomInButton.getStyleClass().add("button");
 
         this.getChildren().addAll(shopButton, pauseButton, menuButton);
     }
@@ -30,4 +39,6 @@ public class GameButtons extends HBox {
     public Button getShopButton() { return shopButton; }
     public Button getPauseButton() { return pauseButton; }
     public Button getMenuButton() { return menuButton; }
+    public Button getZoomInButton() { return zoomInButton; }
+    public Button getZoomOutButton() { return zoomOutButton; }
 }

@@ -41,6 +41,7 @@ public class GameScene extends StackPane {
     private VisualManager visualManager;
     private PacketController packetController;
     private ShopManager shopManager;
+    private net.client.OnlineRenderer onlineRenderer = new net.client.OnlineRenderer();
 
     public GameScene(Level level, VisualManager visualManager) {
         this.level = level;
@@ -90,6 +91,14 @@ public class GameScene extends StackPane {
         hud = new HUDScene(level);
         hud.getStyleClass().add("hud-pane");
         mainLayout.setTop(hud);
+        try {
+            // Initialize HUD connection status immediately
+            hud.setConnectionStatus(net.NetworkService.getInstance().isConnected());
+            net.NetworkService.getInstance().onConnectionChanged(connected -> {
+                hud.setConnectionStatus(connected);
+                try { view.components.Toast.show(this, connected ? "Connected" : "Connection lost", connected); } catch (Throwable ignored) {}
+            });
+        } catch (Throwable ignored) {}
 
         // Bottom controls (without Aergia; moved to HUD)
         controls = new GameButtons();
@@ -138,6 +147,22 @@ public class GameScene extends StackPane {
 
         // Start the level timer
         startLevelTimer();
+
+        // Subscribe to basic StateUpdate to reflect simple stats in HUD
+        try {
+            net.NetworkService.getInstance().onStateUpdate(update -> {
+                if (update != null && update.snapshot != null) {
+                    if (hud != null) {
+                        hud.getCoinsBox().setValue(String.valueOf(update.snapshot.coins));
+                        hud.getPacketsBox().setValue(String.valueOf(update.snapshot.packetsCollected));
+                        // loss displayed as ratio% if packetsGenerated available later; for now show count
+                        hud.getLossBox().setValue(String.valueOf(update.snapshot.packetLoss));
+                    }
+                    // render packets for a minimal online visualization
+                    onlineRenderer.apply(update, gamePane);
+                }
+            });
+        } catch (Throwable ignored) {}
     }
 
     public void updateAergiaButtonText() {
@@ -244,6 +269,31 @@ public class GameScene extends StackPane {
             service.AudioManager.playButtonClick();
             goToNextLevel();
         });
+
+        // Online: submit run, then show leaderboard overlay
+        try {
+            if (net.NetworkService.getInstance().isConnected()) {
+                String levelCode = visualManager != null ? visualManager.getLevelManager().getCurrentLevelId() : null;
+                long durationMs = (long) elapsedSeconds * 1000L;
+                // Simple local XP proxy until server computes: coins as proxy
+                int xp = level != null ? Math.max(0, level.getCoins()) : 0;
+                net.NetworkService.getInstance().onRunFinished(ack -> {
+                    // After ack, request time leaderboard for current level and show overlay component
+                    if (levelCode != null) {
+                        // Reuse existing overlay component; if not present, show toast
+                        try {
+                            net.NetworkService.getInstance().requestLeaderboard(levelCode, "time", 20);
+                            view.game.LeaderboardScene lb = new view.game.LeaderboardScene();
+                            lb.requestTopTimes(levelCode);
+                            this.getChildren().add(lb);
+                        } catch (Throwable ignored) {}
+                    }
+                });
+                net.NetworkService.getInstance().finishRun(levelCode, durationMs, xp);
+            } else {
+                // Offline: TODO later - queue run spool (not yet implemented)
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void showGameOverOverlay() {
