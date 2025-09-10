@@ -13,10 +13,16 @@ public class LevelCompleteScene extends VBox {
     public LevelCompleteScene() {
         this.getStyleClass().add("overlay");
         messageLabel = new Label("Level Complete!");
-        messageLabel.getStyleClass().add("overlay-label");
+        messageLabel.getStyleClass().add("label");
         nextLevelButton = new Button("Next Level");
         retryButton = new Button("Retry");
         menuButton = new Button("Menu");
+        
+        // Apply button styling
+        nextLevelButton.getStyleClass().add("button");
+        retryButton.getStyleClass().add("button");
+        menuButton.getStyleClass().add("button");
+        
         nextLevelButton.setPrefWidth(180);
         retryButton.setPrefWidth(180);
         menuButton.setPrefWidth(180);

@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -15,6 +17,7 @@ import java.util.UUID;
 public class ProfileDeviceIdProvider implements DeviceIdProvider {
     private final String profileName;
     private final Path idFile;
+    private static final Map<String, String> sessionDeviceIds = new HashMap<>();
 
     public ProfileDeviceIdProvider(String profileName) {
         this.profileName = (profileName == null || profileName.isEmpty()) ? "default" : profileName;
@@ -23,6 +26,20 @@ public class ProfileDeviceIdProvider implements DeviceIdProvider {
 
     @Override
     public String getDeviceId() {
+        // Check if we're in session-based mode (for multiple instances)
+        boolean sessionBased = "true".equals(System.getProperty("networkgame.sessionbased")) ||
+                              profileName.startsWith("temp_");
+        
+        if (sessionBased) {
+            // Use a session-specific ID that persists for this JVM instance
+            return sessionDeviceIds.computeIfAbsent(profileName, k -> {
+                String sessionId = UUID.randomUUID().toString();
+                // Don't persist session-based IDs to disk
+                return sessionId;
+            });
+        }
+        
+        // Normal mode: use existing ID or derive from MAC
         try {
             if (Files.exists(idFile)) return Files.readString(idFile).trim();
         } catch (IOException ignored) {}

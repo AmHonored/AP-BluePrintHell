@@ -12,9 +12,14 @@ public class GameOverScene extends VBox {
     public GameOverScene() {
         this.getStyleClass().add("overlay");
         messageLabel = new Label("Game Over");
-        messageLabel.getStyleClass().add("overlay-label");
+        messageLabel.getStyleClass().add("label");
         retryButton = new Button("Retry");
         menuButton = new Button("Menu");
+        
+        // Apply button styling
+        retryButton.getStyleClass().add("button");
+        menuButton.getStyleClass().add("button");
+        
         retryButton.setPrefWidth(180);
         menuButton.setPrefWidth(180);
         this.setSpacing(20);

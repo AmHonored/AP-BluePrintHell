@@ -35,7 +35,9 @@ public class Main extends Application {
         // Try initial online connect (non-blocking)
         new Thread(() -> {
             try {
-                NetworkService.getInstance().connectOnline("127.0.0.1", 5050, System.getProperty("user.name", "player"));
+                // Use effective username which respects system properties/env vars
+                String username = net.client.UserIdentity.getEffectiveUsername();
+                NetworkService.getInstance().connectOnline("127.0.0.1", 5050, username);
             } catch (Throwable ignored) {}
         }, "initial-connect").start();
     }

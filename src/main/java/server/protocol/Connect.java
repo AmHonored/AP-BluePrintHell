@@ -1,20 +1,20 @@
 package server.protocol;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
- * Server-side mirror of client Connect message.
- * Keeps server independent from client code.
+ * Server-side Connect message.
  */
 public class Connect {
-    public String type;
-    public int protocolVersion;
+    @JsonProperty("type")
+    public String type = "Connect";
+    
+    @JsonProperty("username")
     public String username;
+    
+    @JsonProperty("deviceId")
     public String deviceId;
+    
+    @JsonProperty("clientVersion")
     public String clientVersion;
-
-    public Connect() {}
 }
-
-
-
-
-

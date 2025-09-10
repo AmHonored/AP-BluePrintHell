@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "multiplayer",
+  "name": "Multiplayer",
+  "display": {
+    "gamePane": { "width": 800, "height": 500 },
+    "portSizes": { "SQUARE": 10.0, "TRIANGLE": 15.0, "HEXAGON": 6.0 }
+  },
+  "model": {
+    "wireLength": 1000,
+    "initialCoins": 0,
+    "impactDisabled": true,
+    "collisionsDisabled": true
+  },
+  "systems": []
+}
+
+
+

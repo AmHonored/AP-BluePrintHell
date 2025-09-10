@@ -1,29 +1,49 @@
 package server.protocol;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
+/**
+ * Server-side Leaderboard messages.
+ */
 public class Leaderboard {
+    
     public static class Request {
+        @JsonProperty("type")
         public String type = "LeaderboardRequest";
-        public String levelCode; // required for time leaderboard
-        public String mode; // "time" | "xp" | "campaign"
-        public int limit = 10;
-    }
-
-    public static class Entry {
-        public int rank;
-        public String username;
-        public long durationMs;
-        public int xp;
-        public long when;
-    }
-
-    public static class Response {
-        public String type = "LeaderboardResponse";
-        public String mode;
+        
+        @JsonProperty("levelCode")
         public String levelCode;
+        
+        @JsonProperty("mode")
+        public String mode;
+        
+        @JsonProperty("limit")
+        public int limit;
+    }
+    
+    public static class Response {
+        @JsonProperty("type")
+        public String type = "LeaderboardResponse";
+        
+        @JsonProperty("levelCode")
+        public String levelCode;
+        
+        @JsonProperty("mode")
+        public String mode;
+        
+        @JsonProperty("entries")
         public List<Entry> entries;
     }
+    
+    public static class Entry {
+        @JsonProperty("username")
+        public String username;
+        
+        @JsonProperty("value")
+        public long value;
+        
+        @JsonProperty("timestamp")
+        public long timestamp;
+    }
 }
-
-

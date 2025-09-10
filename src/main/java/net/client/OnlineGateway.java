@@ -7,6 +7,10 @@ import net.GameServerGateway;
 import protocol.messages.*;
 import protocol.messages.Leaderboard;
 import protocol.messages.Run;
+import protocol.messages.RoomCreate;
+import protocol.messages.RoomJoin;
+import protocol.messages.RoomUpdate;
+import protocol.messages.RoomHeartbeat;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +28,7 @@ public class OnlineGateway implements GameServerGateway {
 
     private ClientConnection conn;
     private final List<Consumer<Profile.Snapshot>> profileListeners = new ArrayList<>();
+    private final List<Consumer<RoomUpdate>> roomListeners = new ArrayList<>();
     private volatile boolean connected = false;
     private volatile boolean awaitingAck = false;
     // reserved for metrics/telemetry if needed later
@@ -47,8 +52,10 @@ public class OnlineGateway implements GameServerGateway {
                     Platform.runLater(() -> notifyConnection(false));
                 }
             });
+            // Allow per-process username override to run two clients with different names
+            String effectiveUsername = net.client.UserIdentity.getEffectiveUsername();
             awaitingAck = true;
-            conn.send(new Connect(username, getDeviceId(), getClientVersion()));
+            conn.send(new Connect(effectiveUsername, getDeviceId(), getClientVersion()));
             // Handshake timeout watchdog
             new Thread(() -> {
                 try {
@@ -147,6 +154,10 @@ public class OnlineGateway implements GameServerGateway {
                     Consumer<Run.FinishAck> fcb = finishCallback;
                     if (fcb != null) Platform.runLater(() -> fcb.accept(fa));
                     break;
+                case "RoomUpdate":
+                    RoomUpdate ru = mapper.readValue(json, RoomUpdate.class);
+                    Platform.runLater(() -> roomListeners.forEach(l -> l.accept(ru)));
+                    break;
                 case "Error":
                     ErrorMessage err = mapper.readValue(json, ErrorMessage.class);
                     Platform.runLater(() -> errorListeners.forEach(l -> l.accept(err)));
@@ -193,14 +204,16 @@ public class OnlineGateway implements GameServerGateway {
     }
 
     private String getDeviceId() {
-        String profile = System.getenv("NETWORKGAME_PROFILE");
-        if (profile == null || profile.isEmpty()) {
-            try { profile = ProfileManager.getLastOrDefault(); } catch (Exception ignored) { profile = "default"; }
-        }
+        // Allow per-process overrides to enable running multiple clients concurrently
+        String profile = net.client.UserIdentity.getEffectiveProfile();
+        boolean overrideProvided = net.client.UserIdentity.isProfileOverridden();
         try {
             DeviceIdProvider provider = new ProfileDeviceIdProvider(profile);
             String id = provider.getDeviceId();
-            try { ProfileManager.setLast(profile); } catch (Exception ignored) {}
+            // Only persist last-profile if not using an explicit override
+            if (!overrideProvided) {
+                try { ProfileManager.setLast(profile); } catch (Exception ignored) {}
+            }
             return id;
         } catch (Exception e) {
             return java.util.UUID.randomUUID().toString();
@@ -209,6 +222,28 @@ public class OnlineGateway implements GameServerGateway {
 
     private String getClientVersion() {
         return "1.0.0";
+    }
+
+    public void createRoom(String roomCode) {
+        if (conn != null && connected) {
+            conn.send(new RoomCreate(roomCode));
+        }
+    }
+
+    public void joinRoom(String roomCode) {
+        if (conn != null && connected) {
+            conn.send(new RoomJoin(roomCode));
+        }
+    }
+
+    public void onRoomUpdate(Consumer<RoomUpdate> listener) {
+        roomListeners.add(listener);
+    }
+    
+    public void sendRoomHeartbeat(String roomCode) {
+        if (conn != null && connected) {
+            conn.send(new RoomHeartbeat(roomCode));
+        }
     }
 }
 

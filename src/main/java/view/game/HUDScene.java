@@ -16,6 +16,7 @@ public class HUDScene extends VBox {
     private final StatsBox coinsBox;
     private final StatsBox packetsBox;
     private final Label connectionLabel;
+    private final Button roomButton;
     private final javafx.scene.control.Button aergiaButton;
     private final javafx.scene.control.Button sisyphusButton;
     private final javafx.scene.control.Button eliphasButton;
@@ -70,8 +71,11 @@ public class HUDScene extends VBox {
 
         // Connection status (will be added to button container)
         connectionLabel = new Label("Offline");
-        connectionLabel.getStyleClass().add("connection-status");
-        connectionLabel.setStyle("-fx-text-fill: #ff6666; -fx-font-size: 14px; -fx-font-weight: bold;");
+        connectionLabel.getStyleClass().addAll("connection-status", "offline");
+        // Room button (new)
+        roomButton = new Button("Room");
+        roomButton.getStyleClass().add("room-button");
+        roomButton.setPrefWidth(90);
 
         // Create toggle HUD button with enhanced styling
         toggleHudButton = new Button("Hide HUD");
@@ -106,7 +110,7 @@ public class HUDScene extends VBox {
         HBox leftButtons = new HBox();
         leftButtons.setSpacing(15);
         leftButtons.setAlignment(Pos.CENTER);
-        leftButtons.getChildren().addAll(toggleHudButton, aergiaButton, sisyphusButton, eliphasButton);
+        leftButtons.getChildren().addAll(toggleHudButton, aergiaButton, sisyphusButton, eliphasButton, roomButton);
         
         // Add buttons and connection status directly to container
         buttonContainer.getChildren().addAll(leftButtons, connectionLabel);
@@ -178,10 +182,14 @@ public class HUDScene extends VBox {
     public void setConnectionStatus(boolean connected) {
         if (connected) {
             connectionLabel.setText("Online");
-            connectionLabel.setStyle("-fx-text-fill: #66ff66;");
+            connectionLabel.getStyleClass().remove("offline");
+            if (!connectionLabel.getStyleClass().contains("online")) connectionLabel.getStyleClass().add("online");
         } else {
             connectionLabel.setText("Offline");
-            connectionLabel.setStyle("-fx-text-fill: #ff6666;");
+            connectionLabel.getStyleClass().remove("online");
+            if (!connectionLabel.getStyleClass().contains("offline")) connectionLabel.getStyleClass().add("offline");
         }
     }
+
+    public Button getRoomButton() { return roomButton; }
 }

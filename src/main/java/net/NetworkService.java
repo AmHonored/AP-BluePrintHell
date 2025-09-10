@@ -9,6 +9,10 @@ import protocol.messages.StateUpdate;
 import protocol.messages.Profile;
 import protocol.messages.Leaderboard;
 import protocol.messages.Run;
+import protocol.messages.RoomCreate;
+import protocol.messages.RoomJoin;
+import protocol.messages.RoomUpdate;
+import protocol.messages.RoomHeartbeat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +33,9 @@ public class NetworkService {
     private final List<Consumer<Leaderboard.Response>> leaderboardListeners = new ArrayList<>();
     private final List<Consumer<Profile.Snapshot>> profileListeners = new ArrayList<>();
     private final List<Consumer<Run.FinishAck>> finishListeners = new ArrayList<>();
+    private final List<Consumer<RoomUpdate>> roomListeners = new ArrayList<>();
+    private String currentRoomCode = null;
+    private javafx.animation.Timeline roomHeartbeatTimer;
 
     private NetworkService() {
         // wire through current gateway
@@ -36,6 +43,9 @@ public class NetworkService {
         gateway.onStateUpdate(this::notifyState);
         gateway.onError(this::notifyError);
         gateway.onProfileSnapshot(this::notifyProfile);
+        if (gateway instanceof OnlineGateway) {
+            ((OnlineGateway) gateway).onRoomUpdate(this::notifyRoomUpdate);
+        }
     }
 
     public boolean isConnected() {
@@ -49,6 +59,7 @@ public class NetworkService {
     }
 
     public void goOffline() {
+        stopRoomHeartbeat(); // Stop room heartbeat when going offline
         replaceGateway(new OfflineGateway());
         notifyConnection(false);
     }
@@ -85,12 +96,35 @@ public class NetworkService {
         finishListeners.add(listener);
     }
 
+    public void onRoomUpdate(Consumer<RoomUpdate> listener) {
+        roomListeners.add(listener);
+    }
+
+    public void createRoom(String roomCode) {
+        if (gateway instanceof OnlineGateway) {
+            ((OnlineGateway) gateway).createRoom(roomCode);
+        }
+    }
+
+    public void joinRoom(String roomCode) {
+        if (gateway instanceof OnlineGateway) {
+            ((OnlineGateway) gateway).joinRoom(roomCode);
+        }
+    }
+    
+    public void leaveCurrentRoom() {
+        stopRoomHeartbeat();
+    }
+
     private void replaceGateway(GameServerGateway next) {
         try { gateway.disconnect("switch"); } catch (Exception ignored) {}
         gateway = next;
         gateway.onConnectionChanged(this::notifyConnection);
         gateway.onStateUpdate(this::notifyState);
         gateway.onError(this::notifyError);
+        if (gateway instanceof OnlineGateway) {
+            ((OnlineGateway) gateway).onRoomUpdate(this::notifyRoomUpdate);
+        }
     }
 
     private void notifyConnection(Boolean state) {
@@ -125,6 +159,41 @@ public class NetworkService {
 
     private void notifyRunFinish(Run.FinishAck ack) {
         Platform.runLater(() -> finishListeners.forEach(l -> l.accept(ack)));
+    }
+
+    private void notifyRoomUpdate(RoomUpdate update) {
+        if (update.success && update.roomCode != null) {
+            // Start heartbeat for this room if not already started
+            if (!update.roomCode.equals(currentRoomCode)) {
+                currentRoomCode = update.roomCode;
+                startRoomHeartbeat();
+            }
+        }
+        Platform.runLater(() -> roomListeners.forEach(l -> l.accept(update)));
+    }
+    
+    private void startRoomHeartbeat() {
+        stopRoomHeartbeat(); // Stop any existing heartbeat
+        
+        if (currentRoomCode != null && gateway instanceof OnlineGateway) {
+            roomHeartbeatTimer = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(5), e -> {
+                    if (currentRoomCode != null && gateway instanceof OnlineGateway) {
+                        ((OnlineGateway) gateway).sendRoomHeartbeat(currentRoomCode);
+                    }
+                })
+            );
+            roomHeartbeatTimer.setCycleCount(javafx.animation.Animation.INDEFINITE);
+            roomHeartbeatTimer.play();
+        }
+    }
+    
+    private void stopRoomHeartbeat() {
+        if (roomHeartbeatTimer != null) {
+            roomHeartbeatTimer.stop();
+            roomHeartbeatTimer = null;
+        }
+        currentRoomCode = null;
     }
 
     public void requestLeaderboard(String levelCode, String mode, int limit) {
